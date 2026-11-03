@@ -1,8 +1,0 @@
-Gift-box assets
-
-Closed image: gift-box-closed.png (the user's supplied image, unchanged).
-Opened image: gift-box-open.png (created with the built-in image-generation tool).
-Both images are saved alongside this note in the game's assets/UI folder.
-
-Final image-generation prompt:
-Use case: precise-object-edit. Asset type: opened gift-box state for a children's Hindi game. Input image 1 is the exact edit target. Create a matching OPENED version of this SAME red gift box with white polka dots, broad yellow ribbon, dark brown outlines and bright clean cartoon shading. Preserve its perspective, colors, proportions, and overall identity. The yellow bow has untied into loose yellow ribbon tails; the lid is lifted and tilted just above and behind the open red base, clearly showing the empty dark warm interior of the box. Keep the box centered, complete and fully contained in a square image with 5% padding. No new gifts or objects, no text, no checkmarks, no fruit. Genuine transparent background. Use the same brown outline thickness, red facets, white dots and yellow gloss. Keep the bottom of the base at the same image position as in the supplied closed version so it can crossfade in a game. Only change it from closed and tied to opened and untied.
