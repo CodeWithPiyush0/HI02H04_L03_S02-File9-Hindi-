@@ -91,25 +91,28 @@ for n, (ls, rh, pic) in enumerate(READ, 1):
     slides.append({"id": f"T{n}", "phase": "tutorial", "eis": "iconic", "type": "POEM_READ", "prompt_hi": "आइए कविता पढ़ें।",
                    "audio": au, "data": dict(pic, lines=[line(i, r) for i, r in zip(ls, rh)], ms_per_word=1100)})
 
-# deck page 9 - "कविता फिर से सुनिए।": the whole poem again, then the deck's ten words (हलवाई ... खाई; its list has
-# नचाई once - line 3's), then what तुकांत means
+# deck page 9 - "कविता फिर से सुनिए।", ONE page (user 2026-11-03) showing the poem in two halves of four lines - the second
+# half replaces the first in the same box, no tap; no counter. The lines again, then the deck's ten words (हलवाई ... खाई;
+# its list has नचाई once - line 3's): "अब इन शब्दों को सुनिए ..." before the first half's six, what तुकांत means at the end
 RECAP = [[0, 3], [4], [0, 3], [4], [3], [3], [4], [4]]
+RECAP_LINES = [line(i, r, audio=True) for i, r in enumerate(RECAP)]
 slides.append({"id": "T7", "phase": "tutorial", "eis": "iconic", "type": "POEM_RECAP", "prompt_hi": "कविता फिर से सुनिए।",
                "audio": {"words": vo("vo_t7_words", "अब इन शब्दों को सुनिए। इन सभी शब्दों के अंत में आई की आवाज़ है। आइए सुनते हैं।"),
                          "conclude": vo("vo_t7_conclude", "जिन शब्दों की अंतिम आवाज़ एक जैसी होती है, वह शब्द तुक वाले शब्द यानी तुकांत कहलाते हैं। "
                                                           "इस कविता में जिन शब्दों के अंत में आई की आवाज़ आ रही है, वह सभी तुकांत शब्द हैं।")},
-               "data": {"lines": [line(i, r, audio=True) for i, r in enumerate(RECAP)]}})
+               "data": {"parts": [RECAP_LINES[:4], RECAP_LINES[4:]]}})
 
 # deck pages 10-11
 slides.append({"id": "T8", "phase": "tutorial", "eis": "iconic", "type": "MEET_RHYME", "prompt_hi": "कढ़ाई-मिठाई, तुकांत शब्द हैं।",
                "audio": {"prompt": vo("vo_t8", "दोनों शब्द ध्यान से सुनिए। कढ़ाई, मिठाई। इन दोनों शब्दों के अंत में आई की आवाज़ है, इसलिए यह तुकांत शब्द हैं।")},
-               "data": {"a": {"word": "कढ़ाई", "img": IMG("kadai"), "audio": "vo_o_kadai"},
-                        "b": {"word": "मिठाई", "img": IMG("mithai"), "audio": "vo_o_mithai"}, "rhymes": True}})
+               "data": {"a": {"word": "कढ़ाई", "img": IMG("obj_kadai"), "audio": "vo_o_kadai"},
+                        "b": {"word": "मिठाई", "img": IMG("obj_mithai"), "audio": "vo_o_mithai"}, "rhymes": True,
+                        "ending": "ाई"}})        # the rhyming ending lit as each word is said, and on "आई" (user 2026-11-04)
 slides.append({"id": "T9", "phase": "tutorial", "eis": "iconic", "type": "MEET_RHYME", "prompt_hi": "जलेबी-चाशनी, तुकांत शब्द नहीं हैं।",
                "audio": {"prompt": vo("vo_t9", "दोनों शब्द ध्यान से सुनिए। जलेबी, चाशनी। यह दोनों मीठी चीजें हैं, लेकिन इन दोनों शब्दों के अंत में "
                                                 "आने वाली आवाज़ अलग है, इसलिए यह तुकांत शब्द नहीं हैं।")},
-               "data": {"a": {"word": "जलेबी", "img": IMG("jalebi"), "audio": "vo_o_jalebi"},
-                        "b": {"word": "चाशनी", "img": IMG("chashni"), "audio": "vo_o_chashni"}, "rhymes": False}})
+               "data": {"a": {"word": "जलेबी", "img": IMG("obj_jalebi"), "audio": "vo_o_jalebi"},
+                        "b": {"word": "चाशनी", "img": IMG("obj_chashni"), "audio": "vo_o_chashni"}, "rhymes": False}})
 
 # ---- GUIDED (the deck's order: pages 13, 14, 20, 21, then the two sentences) ------------------------------
 slides.append({"id": "G1", "phase": "guided", "eis": "iconic", "type": "FIND_RHYME", "prompt_hi": "आई की आवाज़ वाले शब्द पहचानिए।",
@@ -134,21 +137,21 @@ def opts(words, answer, pics=None):
 slides.append({"id": "G2", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "कढ़ाई का तुकांत शब्द पहचानिए।",
                "audio": dict(prompt=vo("vo_g2_prompt", "कढ़ाई का तुकांत शब्द पहचानिए। नचाई, चूल्हा, जलेबी।"),
                              **hints(2, "कढ़ाई", ["नचाई", "चूल्हा", "जलेबी"], "नचाई")),
-               "data": {"target": {"word": "कढ़ाई", "img": IMG("kadai"), "audio": "vo_o_kadai"}, "options": opts(["नचाई", "चूल्हा", "जलेबी"], "नचाई")}})
+               "data": {"target": {"word": "कढ़ाई", "img": IMG("obj_kadai"), "audio": "vo_o_kadai"}, "options": opts(["नचाई", "चूल्हा", "जलेबी"], "नचाई")}})
 # deck page 20 - हाँ / नहीं
 slides.append({"id": "G3", "phase": "guided", "eis": "iconic", "type": "RHYME_YESNO", "prompt_hi": "मिठाई- चूल्हा, क्या यह तुकांत शब्द हैं?",
                "audio": {"prompt": vo("vo_g3_prompt", "मिठाई, चूल्हा, क्या यह तुकांत शब्द हैं? हाँ, नहीं।"),
                          "hint1": vo("vo_g3_hint1", "शब्दों को बोलकर देखिए। क्या दोनों शब्दों की अंतिम आवाज़ समान है?"),
                          "hint2": vo("vo_g3_hint2", "मिठाई, चूल्हा।"),
                          "hint3": vo("vo_g3_hint3", "मिठाई और चूल्हा दोनों की अंतिम आवाज़ अलग-अलग है। यह तुकांत शब्द नहीं हैं।")},
-               "data": {"a": {"word": "मिठाई", "img": IMG("mithai"), "audio": "vo_o_mithai"},
+               "data": {"a": {"word": "मिठाई", "img": IMG("obj_mithai"), "audio": "vo_o_mithai"},
                         "b": {"word": "चूल्हा", "img": IMG("chulha"), "audio": "vo_o_chulha"}, "rhymes": False,
                         "yes": {"word": "हाँ", "audio": vo("vo_yes", "हाँ।")}, "no": {"word": "नहीं", "audio": vo("vo_no", "नहीं।")}}})
 # deck page 21 (first) - words only, as page 14
 slides.append({"id": "G4", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "हलवाई का तुकांत शब्द पहचानिए।",
                "audio": dict(prompt=vo("vo_g4_prompt", "हलवाई का तुकांत शब्द पहचानिए। रजाई, पैसे, जलेबी।"),
                              **hints(4, "हलवाई", ["रजाई", "पैसे", "जलेबी"], "रजाई")),
-               "data": {"target": {"word": "हलवाई", "img": IMG("halwai"), "audio": "vo_o_halwai"}, "options": opts(["रजाई", "पैसे", "जलेबी"], "रजाई")}})
+               "data": {"target": {"word": "हलवाई", "img": IMG("halwai_cover"), "audio": "vo_o_halwai"}, "options": opts(["रजाई", "पैसे", "जलेबी"], "रजाई")}})
 # deck page 21 (second / third) - the sentences, "image with text" options; the updated deck's new VO on the first
 slides.append({"id": "G5", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "तुकांत शब्द चुनकर वाक्य पूरा कीजिए।",
                "audio": dict(prompt=vo("vo_g5_prompt", "अब इस वाक्य को सही तुकांत शब्द चुनकर पूरा कीजिए। जंगल में नाच रहा था मोर। तभी वहाँ आया एक, खाली जगह। चोर, शेर, हाथी।"),
@@ -191,7 +194,7 @@ for s in slides:
         assert sum(1 for o in d["options"] if o.get("correct")) == 1, s["id"]
 for q in questions:
     assert sum(1 for o in q["options"] if o.get("correct")) == 1, q
-assert sum(1 for w in slides[6]["data"]["lines"] for x in w["words"] if x["rhyme"]) == 10    # the deck's ten words
+assert sum(1 for s in slides if s["type"] == "POEM_RECAP" for pt in s["data"]["parts"] for w in pt for x in w["words"] if x["rhyme"]) == 10    # the deck's ten words
 
 phase_n = {}
 for s in slides:
@@ -243,10 +246,12 @@ def timing(cid):
         if a - t > 0.05: segs.append([round(t * 1000), round(a * 1000)])
         t = b
     if dur - t > 0.05: segs.append([round(t * 1000), round(dur * 1000)])
-    return {"s": segs[0][0], "e": segs[-1][1], "segs": segs} if segs else None
+    return {"s": segs[0][0], "e": segs[-1][1], "segs": segs, "d": round(dur * 1000)} if segs else None
 
 
-AUDIO_TIMING = {cid: timing(cid) for _, cid in POEM}
+# every clip (user 2026-11-04: options come in as the VO names them, hint 2 lights each option as it is said, page 8 lights
+# "ाई" as कढ़ाई / मिठाई / आई are said) - the word's place in the clip follows its measured speech, as the poem karaoke does
+AUDIO_TIMING = {cid: timing(cid) for cid in sorted(VO)}
 AUDIO_TIMING = {k: v for k, v in AUDIO_TIMING.items() if v}
 
 for s in slides:

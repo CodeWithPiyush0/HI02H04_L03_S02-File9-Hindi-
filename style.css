@@ -2458,7 +2458,7 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-line.chip .jl-w.found{background:#EFFBF2;border-color:#00B132;color:#007A23;box-shadow:0 3px 0 #A8E3B9;}
 .jl-line.chip .jl-w.wrong{border-color:#F5A524;background:#FFF6E5;}
 .jl-line.chip .jl-w.hint-on{border-color:#00B132;}
-.jl-recap,.jl-find{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.jl-find{display:flex;flex-direction:column;align-items:center;gap:14px;}
 .jl-find .jl-line.chip{font-size:38px;}
 .jl-find .jl-line.chip .jl-w{cursor:pointer;margin:4px 0;}
 
@@ -2474,7 +2474,7 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-card.target{flex-direction:row;gap:16px;padding:10px 30px 10px 18px;}
 .jl-card.target .jl-card-pic{width:116px;height:116px;}
 .jl-card.target .jl-card-word{font-size:52px;}
-.jl-meet{display:flex;align-items:center;justify-content:center;gap:56px;}
+.jl-meet{display:flex;align-items:center;justify-content:center;gap:120px;}
 .jl-meet-sym{font-family:var(--font-hi);font-weight:800;font-size:76px;line-height:1;}
 .jl-meet-sym.yes{color:#7A4BD8;}
 .jl-meet-sym.no{color:#F38A12;}
@@ -2552,15 +2552,56 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
   .jl-gift.is-opening .gift-closed,.jl-gift.is-opening .gift-ribbon,.jl-gift.is-opening .gift-open,
   .trophy-reward-art.is-entered .trophy-reward-base,.trophy-reward-star.is-revealed{animation:none;opacity:1;transform:none;}
 }
-/* page 9 holds all eight lines inside the tutorial frame: smaller chips, so the box stays clear of Swiftee */
-.jl-recap{gap:8px;}
-.jl-recap .jl-count{font-size:24px;padding:2px 18px;}
-.jl-recap .jl-poem{padding:12px 26px;gap:8px;}
-.jl-recap .jl-col{gap:6px;}
-.jl-recap .jl-line.chip{font-size:26px;}
-.jl-recap .jl-line.chip .jl-w{padding:1px 10px;margin:1px 0;}
 /* data.no_head (the trophy page): no header band, no header Swiftee - the shell sets .no-head, this hides them */
 .stage.no-head .header-row,.stage.no-head .mascot-wrap{visibility:hidden;}
 /* every tutorial page: the → inside the frame (user 2026-11-03: "the next button is getting out of the main container").
    File6's 89px put its bottom 3px below the frame here; 122px = 20px above the frame's inner bottom edge. */
 .stage.tut .nav-btn{bottom:122px;}
+/* page 9 (T7 / T7B): four lines of the poem in the poem pages' sentence box, larger - its words light with the voice (#FF8A00
+   x1.1, as pages 3-8), the deck's rhyme words turn orange as they are said (user 2026-11-03: two pages, no counter) */
+.jl-recap{display:flex;align-items:center;justify-content:center;}
+.jl-recap-box{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px 46px;border:4px solid #FFFFFF;border-radius:20.83px;background:#FFFFFF;
+  box-shadow:0 5px 0 rgba(11,42,90,.10),0 10px 26px rgba(11,42,90,.12);font-family:var(--font-hi);font-size:36px;font-weight:700;line-height:1.5;
+  word-spacing:.25em;color:#0B3D8C;text-align:center;}
+.jl-recap-box .jl-line{font:inherit;line-height:inherit;color:inherit;white-space:nowrap;}
+.jl-recap-box .jl-w{display:inline-block;padding:0;border-radius:0;background:none;transition:color .15s ease,transform .15s ease;}
+.jl-recap-box .jl-w.now{color:#FF8A00;transform:scale(1.10);}
+.jl-recap-box .jl-w.found{color:#F28C28;}
+/* page 9: the second half of the poem replaces the first in the same box - a short fade, no tap */
+.jl-recap-box{transition:opacity .3s ease;}
+.jl-recap-box.out{opacity:0;}
+/* pages 11-13 (G2, G3, G4): HI02H04_L03_S01's question page (its page 14), its measured values (user 2026-11-03) - the picture
+   box 560 x 315 (white, radius 14, soft shadow) right under the header, here with the word inside it under the picture; two
+   boxes side by side on the हाँ / नहीं page; the three answer buttons 344 x 78 (3px #DADBDF rim, radius 28, 7px grey foot,
+   32px / 800 navy) 36px apart, their row at the stage's y 532 */
+.jl-q.ref-q{position:relative;display:block;flex:1;margin:0 -36px;}
+.jl-qpics{position:absolute;left:0;right:0;top:0;display:flex;justify-content:center;gap:60px;}
+.jl-qpic{width:560px;height:315px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px 8px;
+  border:0;border-radius:14px;background:#FFFFFF;box-shadow:0 3px 10px rgba(11,42,90,.18);font-family:var(--font-hi);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:scale .2s;}
+.jl-qpic:active{scale:.98;}
+.jl-qpics.two .jl-qpic{width:440px;}
+.jl-qpic-img{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
+.jl-qpic-img img{max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;border-radius:10px;pointer-events:none;}
+.jl-qpic-name{flex-shrink:0;font-weight:800;font-size:40px;line-height:1.15;color:#0B3D8C;}
+body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
+.jl-opts.ref{position:absolute;left:0;right:0;top:376px;gap:36px;}
+.jl-opts.ref .jl-opt{width:344px;min-width:344px;height:78px;box-sizing:border-box;padding:10px 12px;border:3px solid #DADBDF;border-radius:28px;
+  background:#FFFFFF;box-shadow:0 7px 0 #D3D4D8;font-size:32px;font-weight:800;line-height:36.8px;color:#0B3D8C;}
+.jl-opts.ref .jl-opt:active{box-shadow:0 3px 0 #D3D4D8;translate:0 4px;}
+.jl-opts.ref .jl-opt.wrong{border-color:#F5A524;background:#FFF6E5;box-shadow:0 7px 0 #F2D29A;}
+.jl-opts.ref .jl-opt.correct{border:4px solid #00B132;background:#EFFBF2;box-shadow:0 7px 0 #A8E3B9,0 0 14px rgba(0,177,50,.4);}
+.jl-opts.ref .jl-opt.hint-on{border-color:#00B132;box-shadow:0 7px 0 #D3D4D8,0 0 0 6px rgba(0,177,50,.28);}
+/* page 10 (G1): no counter; the poem box bigger, so it fills the page (user 2026-11-03) */
+.jl-find{flex:1;justify-content:center;}
+.jl-find .jl-poem{padding:26px 54px;gap:14px;border-radius:30px;}
+.jl-find .jl-line.chip{font-size:46px;line-height:1.25;}
+.jl-find .jl-line.chip .jl-w{padding:4px 16px;margin:3px 0;border-radius:16px;}
+/* page 8: the rhyming ending "ाई" lit as its word is said (app.js jlEnding: an orange copy clipped to the ending) */
+.jl-endw{position:relative;display:inline-block;}
+.jl-end{position:absolute;left:0;top:0;color:#FF8A00;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+.jl-end.on{opacity:1;}
+.jl-measure{position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap;}
+/* hint 2 (user 2026-11-04): each option / picture lights as the voice says it */
+.jl-opt.say-glow,.jl-opts.ref .jl-opt.say-glow{border-color:#1987FC;background:#EEF6FF;scale:1.06;box-shadow:0 7px 0 #A9CDF2,0 0 0 8px rgba(25,135,252,.22);transition:scale .15s,border-color .15s,background .15s;}
+.jl-qpic.say-glow{scale:1.04;box-shadow:0 3px 10px rgba(11,42,90,.18),0 0 0 8px rgba(25,135,252,.30);transition:scale .15s,box-shadow .15s;}

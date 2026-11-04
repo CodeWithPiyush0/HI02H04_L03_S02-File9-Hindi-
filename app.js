@@ -980,16 +980,36 @@ function pvChipPaint(){
   else if(!isPlaying) chip.classList.remove("playing");
 }
 
+/* ---- [jalebi] where a word is said in a clip: its measured speech (tools/lessons.py assets.audio_timing) and its line
+   (assets.audio_text), the words placed as the poem karaoke places them (jlWordSchedule - defined below, hoisted). The
+   words are found in the line in order; fromEnd: from the line's end (the options are listed last). -> fractions of the
+   clip, for C.clip's cues; null when unknown. ---- */
+function jlWordFracs(id, words, fromEnd){
+  const A = CARD.assets || {}, tm = (A.audio_timing || {})[id], text = (A.audio_text || {})[id];
+  if(!tm || !text || !tm.d) return words.map(()=> null);
+  const toks = text.split(/\s+/).filter(Boolean).map(t => ({ textContent: t }));
+  const sched = jlWordSchedule(toks, tm), clean = t => String(t).replace(/[।,!?;:“”"'—-]/g, "");
+  const at = new Array(words.length).fill(-1);
+  if(fromEnd){ let j = toks.length - 1;
+    for(let k = words.length - 1; k >= 0; k--){ while(j >= 0 && clean(toks[j].textContent) !== clean(words[k])) j--; at[k] = j; j--; } }
+  else { let j = 0;
+    words.forEach((w, k)=>{ while(j < toks.length && clean(toks[j].textContent) !== clean(w)) j++; at[k] = j < toks.length ? j : -1; j++; }); }
+  return at.map(i => i >= 0 && sched[i] ? sched[i][0] / tm.d : null);
+}
+/* a card lights for a moment as the voice says its word (hint 2: "नचाई, चूल्हा, जलेबी") */
+function jlSayGlow(el){ if(!el) return; el.classList.remove("say-glow"); void el.offsetWidth; el.classList.add("say-glow"); setTimeout(()=> el.classList.remove("say-glow"), 900); }
+
 /* ---- [jalebi] the answer step of every question page: options, the help ladder, the right answer ----
-   As File6's answer cards (PVK.mcq): a new order on every visit (never the last one; yes / no keeps its order), each card
-   says its word when tapped; a wrong card shakes with its amber rim and returns; the deck's three hints in turn - the
-   3rd lights the right card and fades + locks the others (File6's WA3); the right card turns green, the others go,
-   SFX + confetti + Swiftie cheers, then its word. 7s idle: the question again.
-   cfg: { options:[{word, img, audio, correct}], keep_order, pictures, ladder: async (n, M) =>, reask: async =>,
-          onRight: async (card, opt) =>, signal } -> a promise of the number of wrong taps */
+   As File6's answer cards (PVK.mcq): the options come in one by one as the voice names them (user 2026-11-04; M.show,
+   driven by the page); a wrong card shakes with its amber rim and the wrong sound (no word over it), then the deck's
+   hints in turn - 1 the first hint, 2 the options said again, each lighting as it is said, 3 the others fade and lock,
+   the right card lights (File6's WA3), and the third hint is said; the right card turns green, the others go, SFX +
+   confetti + Swiftie cheers, then its word. 7s idle: the question again. keep_order: the cards stand in the order the
+   voice names them. cfg: { options:[{word, img, audio, correct}], keep_order, pictures, ref, ladder: async (n, M) =>,
+   reask: async =>, onRight: async (card, opt) =>, onReady: M =>, signal, key } -> a promise of the number of wrong taps */
 function jlPick(C, parent, cfg){
   return new Promise(res =>{
-    const slide = C.slide, row = JK.add(parent, "div", "jl-opts" + (cfg.pictures ? " pics" : ""));
+    const slide = C.slide, row = JK.add(parent, "div", "jl-opts" + (cfg.pictures ? " pics" : "") + (cfg.ref ? " ref" : ""));
     let opts = cfg.options.slice();
     if(!cfg.keep_order){
       const mix = ()=>{ const o = cfg.options.slice(); for(let i = o.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } return o; };
@@ -1004,6 +1024,9 @@ function jlPick(C, parent, cfg){
     let wrong = 0, busy = true, over = false;
     const W = { live: ()=> !over, busy: ()=> busy }; C.waits.push(W);
     const M = { row, els, right,
+      show(b){ if(b && !b.classList.contains("in")){ b.classList.add("in"); PVSFX.appear(); } },
+      showAll(){ els.forEach(b => M.show(b)); },
+      byWord: w => els.find(b => b._o.word === w),
       lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } }); right.classList.add("hint-on"); JK.softGlow(right); } };
     const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await (cfg.reask ? cfg.reask() : C.say("prompt")); busy = false; });
     async function onWrong(b){
@@ -1011,10 +1034,9 @@ function jlPick(C, parent, cfg){
       try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: false, attempt: wrong, score: 0 }); }catch(e){}
       GameBus.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: wrong });
       state.attempts = wrong; state.scaffoldLevel = Math.min(3, wrong);
-      sfxWrongSoft(); setSwMood("tryagain");
+      stopAudio(); sfxWrongSoft(); setSwMood("tryagain");                // the wrong sound, heard on its own
       b.classList.add("wrong"); JK.shake(b, 9); setTimeout(()=> b.classList.remove("wrong"), 900);
-      await C.sayId(b._o.audio);
-      await C.wait(250);
+      await C.wait(750);
       /* (QA BUG_06: Swiftee stays sad through the whole wrong-answer sequence - the hint too; back to normal after it) */
       await cfg.ladder(wrong, M);
       if(C.alive() && !over){ busy = false; setSwMood("point"); idle.arm(); }
@@ -1032,15 +1054,24 @@ function jlPick(C, parent, cfg){
       res(wrong);
     }
     els.forEach(b => b.addEventListener("click", ()=>{
-      if(busy || over || !C.alive() || b.classList.contains("locked")) return;
+      if(busy || over || !C.alive() || b.classList.contains("locked") || !b.classList.contains("in")) return;
       PVSFX.tap();
       (b === right ? onRight(b) : onWrong(b)).catch(()=>{});
     }));
-    /* the cards come in one by one (File6's mdPop), then the question is asked */
-    els.forEach((b, i)=> setTimeout(()=>{ if(C.alive()){ b.classList.add("in"); PVSFX.appear(); } }, 120 + i * 140));
-    M.ready = ()=>{ busy = false; idle.arm(); };
-    cfg.onReady && cfg.onReady(M);
+    M.ready = ()=>{ M.showAll(); busy = false; idle.arm(); };
+    if(cfg.onReady) cfg.onReady(M); else { M.showAll(); M.ready(); }
   });
+}
+/* the question's line, the options coming in as it names them (its last words), then the child's turn */
+function jlAskWithOptions(C, M, role){
+  const id = C.slide.audio && C.slide.audio[role], f = jlWordFracs(id, M.els.map(b => b._o.word), true);
+  setSwMood("talk");
+  return C.say(role, M.els.map((b, i)=> [f[i], ()=> M.show(b)])).then(()=>{ setSwMood("point"); M.ready(); }, ()=>{});
+}
+/* hint 2: the options (or the pictures) said again, each lighting as it is said. items: [[element, word], ...] */
+function jlSayWithGlow(C, role, items){
+  const id = C.slide.audio && C.slide.audio[role], f = jlWordFracs(id, items.map(x => x[1]), false);
+  return C.say(role, items.map((x, i)=> [f[i], ()=> jlSayGlow(x[0])]));
 }
 
 /* ---- [jalebi] pages 3-8 (T1-T6): HI02H04_L03_S01 (आलू-मालू-कालू) page 1's story-reading page, as it is (user 2026-11-03:
@@ -1106,6 +1137,28 @@ function jlNarrate(C, row){
   row.classList.add("now");
   return C.sayId(row._audio, row._w.map((s, i)=> [f[i], ()=> on(s)])).finally(()=>{
     row._w.forEach(x => x.classList.remove("say")); row.classList.remove("now"); });
+}
+
+/* the question's picture, as HI02H04_L03_S01's question page (its page 14: a 560 x 315 white picture box under the header,
+   user 2026-11-03) - here with the word under the picture, inside the same box. It says its word when tapped. */
+function jlQPic(parent, w){
+  const c = JK.add(parent, "button", "jl-qpic"); c.type = "button";
+  const im = JK.add(JK.add(c, "div", "jl-qpic-img"), "img"); im.src = w.img; im.alt = "";
+  JK.add(c, "span", "jl-qpic-name").textContent = w.word;
+  return c;
+}
+
+/* an ending of a word lit on its own (page 8's "ाई"): the word's span gets an orange copy of itself on top, clipped on
+   the left at the width of the word without its ending - so the ending (its matra too) is coloured, the shaping untouched */
+function jlEnding(span, ending){
+  const word = span ? span.textContent : "";
+  if(!span || !word.endsWith(ending)) return null;
+  span.classList.add("jl-endw");
+  const hl = JK.add(span, "span", "jl-end"); hl.textContent = word; hl.setAttribute("aria-hidden", "true");
+  const fit = ()=>{ const m = JK.add(span, "span", "jl-measure"); m.textContent = word.slice(0, -ending.length);
+    const w = m.offsetWidth; m.remove(); hl.style.clipPath = "inset(-30% -12% -30% " + w + "px)"; };
+  fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  return hl;
 }
 
 const JalebiModules = {
@@ -1184,37 +1237,42 @@ const JalebiModules = {
   },
 
   POEM_RECAP: {
-    /* deck page 9 - "कविता फिर से सुनिए।": the whole poem on one page (user 2026-11-03), read again line by line; then
-       "अब इन शब्दों को सुनिए। इन सभी शब्दों के अंत में आई की आवाज़ है, आइए सुनते हैं।"; then the deck's ten words light one by one,
-       each said; then what तुकांत means; then →. data: { lines:[{words:[{t, rhyme, audio}], audio}] } (rhyme: one of the
-       ten). audio: words, conclude. */
+    /* deck page 9 - "कविता फिर से सुनिए।", on ONE page (user 2026-11-03), the poem in two halves of four lines (eight lines do
+       not fit the box): the first half is read again one by one (each word lit with the voice, as pages 3-8), then "अब इन
+       शब्दों को सुनिए। इन सभी शब्दों के अंत में आई की आवाज़ है, आइए सुनते हैं।", then its words of the deck's ten turn orange
+       one by one, each said; then - no tap - the box fades to the second half: read, its words, then what तुकांत means;
+       then →. No counter. data: { parts:[[line ...], [line ...]] } (line: {words:[{t, rhyme, audio}], audio}; rhyme: one of
+       the ten). audio: words (after the first half's lines), conclude (at the end). */
     mount(host, slide){
-      const d = slide.data, C = JK.ctx(slide, host);
+      const d = slide.data, C = JK.ctx(slide, host), TM = (CARD.assets && CARD.assets.audio_timing) || {};
       state.ownsAudio = true; setNavActive(false); setSwMood("point");
-      const wrap = JK.add(host, "div", "jl-recap");
-      const count = JK.add(wrap, "div", "jl-count");
-      const poem = JK.add(wrap, "div", "jl-poem two");
-      const cols = [JK.add(poem, "div", "jl-col"), JK.add(poem, "div", "jl-col")], half = Math.ceil(d.lines.length / 2);
-      const rows = d.lines.map((l, i)=> jlLine(cols[i < half ? 0 : 1], l, "chip"));
-      const targets = rows.flatMap(r => r._w.filter(s => s._w.rhyme));
-      let found = 0;
-      const paint = ()=> count.innerHTML = '<span class="jl-note">♫</span> ' + found + " / " + targets.length;
-      paint();
+      const box = JK.add(JK.add(host, "div", "jl-recap"), "div", "jl-recap-box");
+      let rows = [];
+      const show = part =>{ box.innerHTML = ""; rows = part.map(l => jlLine(box, l)); };
+      const swap = async part =>{ box.classList.add("out"); await C.wait(320); show(part); box.classList.remove("out"); await C.wait(380); };
       const W = { live: ()=> !C.seq, busy: ()=> false }; C.waits.push(W);
-      const all = async ()=>{
-        setNavActive(false); found = 0; paint(); targets.forEach(s => s.classList.remove("found"));
-        await C.wait(300); setSwMood("talk");
-        for(const r of rows){ await jlNarrate(C, r); await C.wait(180); }
-        await C.wait(250);
-        await C.say("words");
-        for(const s of targets){
-          s.classList.add("found"); JK.pop(s); found++; paint(); PVSFX.appear();
-          await C.sayId(s._w.audio); await C.wait(260);
+      const half = async (i, part)=>{
+        if(i) await swap(part);
+        for(const r of rows){
+          const stop = jlKaraoke(r._w, 0, TM[r._audio]);
+          try{ await C.sayId(r._audio); } finally{ stop(); }
+          await C.wait(180);
         }
-        setSwMood("teach");
-        await C.say("conclude");
+        await C.wait(250);
+        if(i === 0 && C.has("words")) await C.say("words");
+        for(const sp of rows.flatMap(r => r._w.filter(x => x._w.rhyme))){
+          sp.classList.add("found"); JK.pop(sp); PVSFX.appear();
+          await C.sayId(sp._w.audio); await C.wait(260);
+        }
+      };
+      const all = async ()=>{
+        setNavActive(false); show(d.parts[0]);
+        await C.wait(300); setSwMood("talk");
+        for(let i = 0; i < d.parts.length; i++){ await half(i, d.parts[i]); if(i < d.parts.length - 1) await C.wait(500); }
+        if(C.has("conclude")){ setSwMood("teach"); await C.say("conclude"); }
         setSwMood("point"); setNavActive(true);
       };
+      show(d.parts[0]);
       JK.speaker(C, all);
       JK.run(C, all);
     }
@@ -1222,23 +1280,32 @@ const JalebiModules = {
 
   MEET_RHYME: {
     /* deck pages 10-11: two words, their pictures - "दोनों शब्द ध्यान से सुनिए- कढ़ाई- मिठाई ..." - each card lights as its
-       word is said (cues from tools/lessons.py); ♪ between two words that rhyme, ≠ between two that do not. After the line a
+       word is said (cues from tools/lessons.py); nothing between them (user 2026-11-03: no ♪ / ≠). After the line a
        card says its word when tapped; then →. data: { a:{word, img, audio}, b, rhymes, cues:{a, b} }. audio: prompt. */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host), CU = d.cues || {};
       state.ownsAudio = true; setNavActive(false); setSwMood("point");
       const row = JK.add(host, "div", "jl-meet");
       const A = JK.wordCard(row, d.a, "big");
-      JK.add(row, "div", "jl-meet-sym " + (d.rhymes ? "yes" : "no"), d.rhymes ? "♫" : "≠");
-      const B = JK.wordCard(row, d.b, "big");
+      const B = JK.wordCard(row, d.b, "big");      // (no ♪ / ≠ between them - user 2026-11-03)
       let open = false;
       const W = { live: ()=> open, busy: ()=> false }; C.waits.push(W);
+      /* data.ending (page 8, user 2026-11-04): the rhyming ending "ाई" of each word lights orange as the word is said, and both
+         again on "आई" - an orange copy of the word over it, clipped to start where the ending starts (a colour change inside
+         the word would not reach the ा: Devanagari shapes ढ़ा / ठा as one) */
+      const ends = d.ending ? [A, B].map(c => jlEnding(c.querySelector(".jl-card-word"), d.ending)) : [];
+      const endOn = (e, on)=>{ if(!e) return; e.classList.toggle("on", on); if(on) JK.pop(e); };
       [[A, d.a], [B, d.b]].forEach(([c, w])=> c.onclick = ()=>{ if(!open || isPlaying || !C.alive()) return; PVSFX.tap();
         c.classList.add("lit"); C.sayId(w.audio).then(()=> c.classList.remove("lit"), ()=>{}); });
       const all = async ()=>{
-        open = false; await C.wait(300); setSwMood("talk");
+        open = false; ends.forEach(e => endOn(e, false)); await C.wait(300); setSwMood("talk");
         const lit = (c, on)=> c.classList.toggle("lit", on);
-        await C.say("prompt", [[CU.a, ()=> lit(A, true)], [CU.a_end, ()=> lit(A, false)], [CU.b, ()=> lit(B, true)], [CU.b_end, ()=> lit(B, false)]]);
+        /* where the two words (and "आई") are said - measured from the clip; the lesson's estimate if not */
+        const f = jlWordFracs(slide.audio.prompt, d.ending ? [d.a.word, d.b.word, "आई"] : [d.a.word, d.b.word], false);
+        const fa = f[0] != null ? f[0] : CU.a, fb = f[1] != null ? f[1] : CU.b;
+        await C.say("prompt", [[fa, ()=>{ lit(A, true); endOn(ends[0], true); }], [fb, ()=>{ lit(A, false); lit(B, true); endOn(ends[1], true); }],
+                               [fb != null ? fb + .12 : CU.b_end, ()=> lit(B, false)],
+                               [f[2], ()=> ends.forEach(e => endOn(e, true))]]);
         lit(A, false); lit(B, false); open = true; setSwMood("point"); setNavActive(true);
       };
       JK.speaker(C, all);
@@ -1256,14 +1323,13 @@ const JalebiModules = {
       const d = slide.data, C = JK.ctx(slide, host);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
       const wrap = JK.add(host, "div", "jl-find");
-      const count = JK.add(wrap, "div", "jl-count");
-      const poem = JK.add(wrap, "div", "jl-poem");
+      const poem = JK.add(wrap, "div", "jl-poem");             // (no counter - user 2026-11-03)
       const rows = d.lines.map(l => jlLine(poem, l, "chip"));
       const chips = rows.flatMap(r => r._w);
       chips.forEach(s => s.setAttribute("role", "button"));
       const targets = chips.filter(s => s._w.rhyme);
       let found = 0, wrong = 0, streak = 0, busy = true, over = false;
-      const paint = ()=> count.innerHTML = '<span class="jl-note">♫</span> ' + found + " / " + targets.length; paint();
+      const paint = ()=>{};
       const W = { live: ()=> !over, busy: ()=> busy }; C.waits.push(W);
       const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await C.say("prompt"); busy = false; });
       chips.forEach(s => s.addEventListener("click", ()=>{
@@ -1284,7 +1350,8 @@ const JalebiModules = {
           } else {
             wrong++; streak++; state.attempts = wrong; state.scaffoldLevel = Math.min(3, streak);
             GameBus.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: wrong });
-            sfxWrongSoft(); setSwMood("tryagain"); s.classList.add("wrong"); JK.shake(s, 7); setTimeout(()=> s.classList.remove("wrong"), 900);
+            stopAudio(); sfxWrongSoft(); setSwMood("tryagain"); s.classList.add("wrong"); JK.shake(s, 7); setTimeout(()=> s.classList.remove("wrong"), 900);
+            await C.wait(450);                                   // the wrong sound first, then the word (user 2026-11-04)
             await C.sayId(s._w.audio);
             if(streak >= 2){ await C.wait(200); await C.say("hint2"); }
             if(streak >= 3){ const t = targets.find(x => !x.classList.contains("found")); if(t){ t.classList.add("hint-on"); JK.softGlow(t); } }
@@ -1307,24 +1374,28 @@ const JalebiModules = {
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
-      const wrap = JK.add(host, "div", "jl-q");
+      const wrap = JK.add(host, "div", "jl-q" + (d.sentence ? "" : " ref-q"));
       let blank = null;
       if(d.sentence){ const s = JK.add(wrap, "div", "jl-sentence");
         d.sentence.forEach((l, i)=>{ const p = JK.add(s, "div", "jl-sent-line"); const parts = l.split("____");
           p.appendChild(document.createTextNode(parts[0])); if(parts.length > 1){ blank = JK.add(p, "span", "jl-blank"); p.appendChild(document.createTextNode(parts[1])); } }); }
-      else { const t = JK.wordCard(wrap, d.target, "target"); t.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(d.target.audio).catch(()=>{}); } }; }
+      else { const t = jlQPic(JK.add(wrap, "div", "jl-qpics"), d.target); t.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(d.target.audio).catch(()=>{}); } }; }
       JK.speaker(C);
       JK.run(C, async ()=>{
         await C.wait(250);
-        const wrong = await jlPick(C, wrap, { options: d.options, pictures: !!d.pictures,
-          ladder: async (n, M)=>{ if(n === 1) await C.say("hint1"); else if(n === 2) await C.say("hint2"); else { M.lock(); await C.say("hint3"); } },
+        const wrong = await jlPick(C, wrap, { options: d.options, pictures: !!d.pictures, ref: !d.sentence, keep_order: true,
+          /* user 2026-11-04: 1st wrong - hint 1; 2nd - the options said again, each lighting as it is said; 3rd - the others
+             are disabled, then hint 3 */
+          ladder: async (n, M)=>{ if(n === 1) await C.say("hint1");
+            else if(n === 2) await jlSayWithGlow(C, "hint2", M.els.map(b => [b, b._o.word]));
+            else { M.lock(); await C.say("hint3"); } },
           onRight: async b =>{ if(!blank) return;
             const a = b.getBoundingClientRect(), z = blank.getBoundingClientRect(), k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
             const fly = b.querySelector(".jl-opt-word"); fly.style.transition = "translate .6s cubic-bezier(.3,.8,.3,1)";
             const fr = fly.getBoundingClientRect();
             fly.style.translate = ((z.left + z.width / 2 - fr.left - fr.width / 2) / k) + "px " + ((z.top + z.height / 2 - fr.top - fr.height / 2) / k) + "px";
             await C.wait(620); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden"; },
-          onReady: M =>{ setSwMood("talk"); C.say("prompt").then(()=>{ setSwMood("point"); M.ready(); }, ()=>{}); } });
+          onReady: M => jlAskWithOptions(C, M, "prompt") });
         recordResult(slide, wrong === 0);
         completeSlide(wrong === 0);
       });
@@ -1337,17 +1408,20 @@ const JalebiModules = {
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
-      const wrap = JK.add(host, "div", "jl-q");
-      const pair = JK.add(wrap, "div", "jl-pair");
-      [d.a, d.b].forEach((w, i)=>{ if(i) JK.add(pair, "div", "jl-pair-dash", "–");
-        const c = JK.wordCard(pair, w, "target"); c.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(w.audio).catch(()=>{}); } }; });
+      const wrap = JK.add(host, "div", "jl-q ref-q");
+      const pair = JK.add(wrap, "div", "jl-qpics two"), pics = [];
+      [d.a, d.b].forEach((w, i)=>{
+        const c = jlQPic(pair, w); pics.push([c, w.word]); c.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(w.audio).catch(()=>{}); } }; });
       JK.speaker(C);
       JK.run(C, async ()=>{
         await C.wait(250);
-        const wrong = await jlPick(C, wrap, { keep_order: true, signal: "rhyme_judge_correct",
+        const wrong = await jlPick(C, wrap, { keep_order: true, ref: true, signal: "rhyme_judge_correct",
           options: [{ ...d.yes, correct: d.rhymes === true }, { ...d.no, correct: d.rhymes === false }],
-          ladder: async (n, M)=>{ if(n === 1) await C.say("hint1"); else if(n === 2) await C.say("hint2"); else { M.lock(); await C.say("hint3"); } },
-          onReady: M =>{ setSwMood("talk"); C.say("prompt").then(()=>{ setSwMood("point"); M.ready(); }, ()=>{}); } });
+          /* user 2026-11-04 (as pages 11 / 13): hint 2 says "मिठाई, चूल्हा।" - each picture lights as it is said */
+          ladder: async (n, M)=>{ if(n === 1) await C.say("hint1");
+            else if(n === 2) await jlSayWithGlow(C, "hint2", pics);
+            else { M.lock(); await C.say("hint3"); } },
+          onReady: M => jlAskWithOptions(C, M, "prompt") });
         recordResult(slide, wrong === 0);
         completeSlide(wrong === 0);
       });
@@ -1397,8 +1471,11 @@ const JalebiModules = {
           t.onclick = ()=>{ if(!isPlaying && C.alive()){ PVSFX.tap(); C.sayId(q.target.audio).catch(()=>{}); } };
           busy = false;
           const wrong = await jlPick(QC, qv, { options: q.options, key: qs.id, signal: "rhyme_box_correct",
-            ladder: async (n, M)=>{ if(n === 2) await QC.say("hint2"); else if(n >= 3) placeNudge(M.right); },
-            onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(()=>{ setSwMood("point"); M.ready(); }, ()=>{}); } });
+            ladder: async (n, M)=>{ if(n === 2) await jlSayWithGlow(QC, "hint2", M.els.map(b => [b, b._o.word])); else if(n >= 3) placeNudge(M.right); },
+            /* the question, then each option comes in as its own word is said (user 2026-11-04) */
+            onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{
+              for(const b of M.els){ M.show(b); await C.sayId(b._o.audio); await C.wait(150); }
+              setSwMood("point"); M.ready(); }).catch(()=>{}); } });
           stopNudge();
           recordResult(qs, wrong === 0);
           solved.add(i); line = "next";
@@ -1867,31 +1944,31 @@ const ASSET_SIZES = {
   "assets/gif/sw_head_celebrate_anim.webp": 293618,
   "assets/gif/sw_head_hint_anim.webp": 316076,
   "assets/gif/sw_head_tryagain_anim.webp": 313414,
-  "assets/images/chashni.webp": 31502,
   "assets/images/chor.webp": 56536,
   "assets/images/chulha.webp": 28890,
   "assets/images/gaana.webp": 25690,
   "assets/images/gift_closed.webp": 41398,
   "assets/images/gift_open.webp": 53534,
   "assets/images/haath.webp": 17160,
-  "assets/images/halwai.webp": 53186,
+  "assets/images/halwai_cover.webp": 38388,
   "assets/images/hathi.webp": 24844,
-  "assets/images/jalebi.webp": 48576,
-  "assets/images/kadai.webp": 11018,
   "assets/images/mela.webp": 15830,
-  "assets/images/mithai.webp": 60298,
   "assets/images/nudge_hand_ref.webp": 10828,
+  "assets/images/obj_chashni.webp": 34328,
+  "assets/images/obj_jalebi.webp": 38068,
+  "assets/images/obj_kadai.webp": 27472,
+  "assets/images/obj_mithai.webp": 41800,
   "assets/images/paani.webp": 31354,
   "assets/images/ped.webp": 8838,
   "assets/images/phool.webp": 8322,
   "assets/images/raat.webp": 23818,
   "assets/images/raja.webp": 84064,
-  "assets/images/scene_1.webp": 24382,
-  "assets/images/scene_2.webp": 38648,
-  "assets/images/scene_3.webp": 36866,
-  "assets/images/scene_4.webp": 36450,
-  "assets/images/scene_5.webp": 39072,
-  "assets/images/scene_6.webp": 33882,
+  "assets/images/scene_1.webp": 44158,
+  "assets/images/scene_2.webp": 65134,
+  "assets/images/scene_3.webp": 60734,
+  "assets/images/scene_4.webp": 64736,
+  "assets/images/scene_5.webp": 69758,
+  "assets/images/scene_6.webp": 60058,
   "assets/images/sher.webp": 32356,
   "assets/images/title_art.webp": 212930,
   "assets/images/trophy.webp": 80732,
