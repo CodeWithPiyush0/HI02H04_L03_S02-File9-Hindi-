@@ -2605,3 +2605,55 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 /* hint 2 (user 2026-11-04): each option / picture lights as the voice says it */
 .jl-opt.say-glow,.jl-opts.ref .jl-opt.say-glow{border-color:#1987FC;background:#EEF6FF;scale:1.06;box-shadow:0 7px 0 #A9CDF2,0 0 0 8px rgba(25,135,252,.22);transition:scale .15s,border-color .15s,background .15s;}
 .jl-qpic.say-glow{scale:1.04;box-shadow:0 3px 10px rgba(11,42,90,.18),0 0 0 8px rgba(25,135,252,.30);transition:scale .15s,box-shadow .15s;}
+/* pages 14-15: the sentence read with the voice - each word lit (the poem pages' karaoke: #FF8A00 x1.1), the blank too */
+.jl-sw{display:inline-block;margin:0 3px;transition:color .15s ease,transform .15s ease;}
+.jl-sw.now{color:#FF8A00;transform:scale(1.10);}
+.jl-blank{transition:border-color .15s ease,background .15s ease;}
+.jl-blank.now{border-bottom-color:#FF8A00;background:rgba(255,138,0,.12);}
+
+/* ---- page 16 (P1): the jalebi shop journey (user 2026-11-05) - a market path, six gift boxes at its stops, Muniya walking
+   it (the stretch she walks turns gold), the halwai's shop at the end; the question comes up over the map ---- */
+.jl-journey{position:relative;flex:1;}
+.jl-map{position:absolute;left:-110px;top:26px;width:1253px;height:500px;}
+.jl-map-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;}
+.jl-road-edge{fill:none;stroke:#E6C48A;stroke-width:62;stroke-linecap:round;stroke-linejoin:round;}
+.jl-road{fill:none;stroke:#FBE7BE;stroke-width:50;stroke-linecap:round;stroke-linejoin:round;}
+.jl-road-dash{fill:none;stroke:#FFFFFF;stroke-width:5;stroke-linecap:round;stroke-dasharray:2 20;opacity:.95;}
+.jl-road-lit{fill:none;stroke:#FFC21A;stroke-width:16;stroke-linecap:round;opacity:.95;
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);transition:stroke-dashoffset 1.5s linear;filter:drop-shadow(0 0 6px rgba(255,170,0,.55));}
+.jl-road-lit.on{stroke-dashoffset:0;}
+.jl-start{position:absolute;width:74px;height:30px;margin:-15px 0 0 -37px;border-radius:50%;background:#FFD24E;box-shadow:inset 0 -4px 0 #F2A80F,0 4px 8px rgba(0,0,0,.12);}
+/* the stops: the gift box, smaller than the board's, standing on its point */
+.jl-gift.jl-stop{position:absolute;width:118px;height:118px;margin:-84px 0 0 -59px;z-index:3;}
+.jl-gift.jl-stop:disabled{cursor:default;}
+.jl-gift.jl-stop:not(.solved):not(.next){filter:saturate(.8);}
+.jl-gift.jl-stop.next{z-index:6;animation:jlBoxNext 1.1s ease-in-out infinite;}
+.jl-gift.jl-stop.next::before{content:"";position:absolute;left:50%;bottom:-6px;width:110px;height:30px;margin-left:-55px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,194,26,.75),rgba(255,194,26,0));animation:jlBoxGlow 1.1s ease-in-out infinite;}
+.jl-gift.jl-stop .jl-gift-tick{right:-2px;top:2px;width:40px;height:40px;font-size:24px;line-height:32px;}
+@keyframes jlBoxNext{0%,100%{translate:0 0;rotate:0deg;}25%{translate:0 -12px;rotate:-5deg;}50%{translate:0 0;rotate:0deg;}75%{translate:0 -6px;rotate:4deg;}}
+@keyframes jlBoxGlow{0%,100%{opacity:.55;scale:.85;}50%{opacity:1;scale:1.1;}}
+/* Muniya: her feet at her point */
+.jl-muniya{position:absolute;height:150px;width:auto;margin:-150px 0 0 -43px;z-index:5;pointer-events:none;filter:drop-shadow(0 6px 6px rgba(0,0,0,.18));}
+/* the halwai's shop: a striped awning over his sign (the cover's halwai), a plate of jalebis */
+.jl-shop{position:absolute;width:176px;height:212px;margin:-120px 0 0 -88px;z-index:2;}
+.jl-awning{position:absolute;left:-6px;right:-6px;top:0;height:46px;border-radius:12px 12px 4px 4px;
+  background:repeating-linear-gradient(90deg,#E5383B 0 22px,#FFFFFF 22px 44px);box-shadow:0 5px 0 rgba(0,0,0,.08);}
+.jl-awning::after{content:"";position:absolute;left:0;right:0;bottom:-11px;height:12px;
+  background:radial-gradient(circle at 11px 0,#E5383B 10px,transparent 11px) 0 0/44px 12px repeat-x,radial-gradient(circle at 33px 0,#FFFFFF 10px,transparent 11px) 0 0/44px 12px repeat-x;}
+.jl-sign{position:absolute;left:10px;right:10px;top:56px;height:150px;border-radius:16px;overflow:hidden;background:#FFF;border:5px solid #FFFFFF;
+  box-shadow:0 5px 0 #E6C48A,0 10px 20px rgba(120,80,0,.18);}
+.jl-sign img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;}
+.jl-plate{position:absolute;right:-26px;bottom:-14px;width:86px;height:86px;object-fit:contain;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15));}
+.jl-shop.cheer{animation:jlShopCheer .6s cubic-bezier(.3,1.6,.5,1) 3;}
+@keyframes jlShopCheer{0%,100%{scale:1;}50%{scale:1.12;}}
+/* the question over the map: the whole page area, pages 11-13's layout inside it */
+.jl-quest{position:absolute;left:-150px;right:-150px;top:-6px;bottom:-100px;z-index:20;background:rgba(250,247,241,.97);}
+.jl-quest[hidden]{display:none;}
+.jl-quest.in{animation:jlQuestIn .38s cubic-bezier(.3,1.3,.5,1) both;}
+.jl-quest.out{animation:jlQuestOut .36s ease-in both;}
+.jl-quest-in{position:absolute;left:150px;right:150px;top:6px;bottom:100px;display:flex;flex-direction:column;}
+@keyframes jlQuestIn{from{opacity:0;scale:.92;}to{opacity:1;scale:1;}}
+@keyframes jlQuestOut{from{opacity:1;}to{opacity:0;scale:.96;}}
+body.vo-busy #slideHost .jl-stop{pointer-events:none !important;}
+@media (prefers-reduced-motion:reduce){ .jl-gift.jl-stop.next,.jl-gift.jl-stop.next::before,.jl-shop.cheer,.jl-quest.in,.jl-quest.out{animation:none;} .jl-road-lit{transition:none;} }

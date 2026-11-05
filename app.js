@@ -1063,10 +1063,11 @@ function jlPick(C, parent, cfg){
   });
 }
 /* the question's line, the options coming in as it names them (its last words), then the child's turn */
-function jlAskWithOptions(C, M, role){
+function jlAskWithOptions(C, M, role, extra, onFirstOption){
   const id = C.slide.audio && C.slide.audio[role], f = jlWordFracs(id, M.els.map(b => b._o.word), true);
   setSwMood("talk");
-  return C.say(role, M.els.map((b, i)=> [f[i], ()=> M.show(b)])).then(()=>{ setSwMood("point"); M.ready(); }, ()=>{});
+  const cues = M.els.map((b, i)=> [f[i], ()=>{ if(i === 0 && onFirstOption) onFirstOption(); M.show(b); }]).concat(extra || []);
+  return C.say(role, cues).then(()=>{ if(onFirstOption) onFirstOption(); setSwMood("point"); M.ready(); }, ()=>{});
 }
 /* hint 2: the options (or the pictures) said again, each lighting as it is said. items: [[element, word], ...] */
 function jlSayWithGlow(C, role, items){
@@ -1376,9 +1377,14 @@ const JalebiModules = {
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
       const wrap = JK.add(host, "div", "jl-q" + (d.sentence ? "" : " ref-q"));
       let blank = null;
+      /* the sentence as word spans (user 2026-11-05: each word lights as the voice reads it; the blank on "खाली जगह") */
+      const sentWords = [];
       if(d.sentence){ const s = JK.add(wrap, "div", "jl-sentence");
-        d.sentence.forEach((l, i)=>{ const p = JK.add(s, "div", "jl-sent-line"); const parts = l.split("____");
-          p.appendChild(document.createTextNode(parts[0])); if(parts.length > 1){ blank = JK.add(p, "span", "jl-blank"); p.appendChild(document.createTextNode(parts[1])); } }); }
+        d.sentence.forEach(l =>{ const p = JK.add(s, "div", "jl-sent-line");
+          l.split(/\s+/).filter(Boolean).forEach((t, i)=>{ if(i) p.appendChild(document.createTextNode(" "));
+            if(t.indexOf("____") >= 0){ blank = JK.add(p, "span", "jl-blank"); blank._say = "खाली"; sentWords.push(blank);
+              const rest = t.replace("____", ""); if(rest) p.appendChild(document.createTextNode(rest)); }
+            else { const w = JK.add(p, "span", "jl-sw"); w.textContent = t; w._say = t; sentWords.push(w); } }); }); }
       else { const t = jlQPic(JK.add(wrap, "div", "jl-qpics"), d.target); t.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(d.target.audio).catch(()=>{}); } }; }
       JK.speaker(C);
       JK.run(C, async ()=>{
@@ -1395,7 +1401,15 @@ const JalebiModules = {
             const fr = fly.getBoundingClientRect();
             fly.style.translate = ((z.left + z.width / 2 - fr.left - fr.width / 2) / k) + "px " + ((z.top + z.height / 2 - fr.top - fr.height / 2) / k) + "px";
             await C.wait(620); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden"; },
-          onReady: M => jlAskWithOptions(C, M, "prompt") });
+          onReady: M =>{
+            /* the sentence read: each of its words lit as it is said (found in the line in order, after the instruction) */
+            const f = sentWords.length ? jlWordFracs(slide.audio.prompt, sentWords.map(w => w._say), false) : [];
+            const on = w =>{ sentWords.forEach(x => x.classList.toggle("now", x === w)); };
+            const extra = sentWords.map((w, i)=> [f[i], ()=> on(w)]);
+            const last = f.filter(x => x != null).pop();
+            if(last != null) extra.push([last + .06, ()=>{}]);
+            return jlAskWithOptions(C, M, "prompt", extra, ()=> on(null));
+          } });
         recordResult(slide, wrong === 0);
         completeSlide(wrong === 0);
       });
@@ -1429,62 +1443,113 @@ const JalebiModules = {
   },
 
   RHYME_BOXES: {
-    /* deck pages 19 (x6) - the practice game: six gift boxes, each its own colour (user 2026-11-03; the deck: "अलग-अलग
-       फल/मिठाई/रंग"). "डिब्बे को खोलने के लिए उसपर टैप कीजिए।" - a tapped box opens (its sound), and its question comes up: the
-       word's picture + word, three words. Help (the deck): 1 the wrong word wiggles, 2 the options said, 3 the hand on the
-       right word. Answered: back to the boxes, that one open; "किसी भी एक डिब्बे पर टैप कीजिए।". All six: on to the trophy.
-       data: { boxes:[{hue}], questions:[{prompt_hi, audio:{prompt, hint2}, target, options}] }. audio: prompt, next. */
+    /* deck pages 19 (x6), as a game (user 2026-11-05: "more interesting for kids and gamified" - the jalebi shop journey):
+       a winding market path with the six gift boxes (six colours) at its stops and the halwai's shop at its end. Muniya
+       walks the path - the stretch she walks turns gold behind her - and stops beside the next box, which bounces;
+       "डिब्बे को खोलने के लिए उस पर टैप कीजिए।" (7s idle: the hand on that box + the line again). A tapped box opens and its
+       question comes up (pages 11-13's layout: the word's picture box, three answers coming in as they are said). Help
+       (the deck): 1 the wrong word wiggles with the wrong sound, 2 the options said again, each lighting, 3 the hand on
+       the right word. Answered: back to the path, the box open with its tick, Muniya walks on; after the sixth she walks
+       to the shop, the halwai's sign bounces, confetti - then the trophy.
+       data: { path:[[x, y] start, 6 stops, shop], boxes:[{hue}], questions:[{prompt_hi, audio:{prompt, hint2}, target,
+       options}], closed, open, muniya, shop, plate }. audio: prompt. */
     mount(host, slide){
-      const d = slide.data, C = JK.ctx(slide, host), Q = d.questions, solved = new Set();
+      const d = slide.data, C = JK.ctx(slide, host), Q = d.questions, P = d.path, NS = "http://www.w3.org/2000/svg";
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
-      const wrap = JK.add(host, "div", "jl-boxes");
-      const board = JK.add(wrap, "div", "jl-board");
-      const qv = JK.add(wrap, "div", "jl-q jl-boxq"); qv.hidden = true;
-      const boxes = Q.map((q, i)=>{ const b = JK.add(board, "button", "jl-gift"); b.type = "button";
-        b.style.setProperty("--hue", (d.boxes[i] && d.boxes[i].hue || 0) + "deg");
+      const wrap = JK.add(host, "div", "jl-journey"), map = JK.add(wrap, "div", "jl-map");
+      const svg = document.createElementNS(NS, "svg"); svg.setAttribute("class", "jl-map-svg"); svg.setAttribute("viewBox", "0 0 1253 500");
+      svg.setAttribute("width", "1253"); svg.setAttribute("height", "500"); map.appendChild(svg);
+      const path = (dd, cls)=>{ const e = document.createElementNS(NS, "path"); e.setAttribute("d", dd); e.setAttribute("class", cls); svg.appendChild(e); return e; };
+      /* the path through its points, smooth (Catmull-Rom as cubic Béziers), one segment per stretch */
+      const pt = i => P[Math.max(0, Math.min(P.length - 1, i))];
+      const seg = i =>{ const p0 = pt(i - 1), p1 = pt(i), p2 = pt(i + 1), p3 = pt(i + 2);
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        return "M" + p1 + " C" + c1 + " " + c2 + " " + p2; };
+      const whole = P.slice(0, -1).map((_, i)=> seg(i)).join(" ");
+      path(whole, "jl-road-edge"); path(whole, "jl-road"); path(whole, "jl-road-dash");
+      const lit = P.slice(0, -1).map((_, i)=>{ const e = path(seg(i), "jl-road-lit"); e.style.setProperty("--len", e.getTotalLength()); return e; });
+      const startPad = JK.add(map, "div", "jl-start"); startPad.style.left = P[0][0] + "px"; startPad.style.top = P[0][1] + "px";
+      /* the six boxes at the stops, the shop at the end */
+      const boxes = Q.map((q, i)=>{ const b = JK.add(map, "button", "jl-gift jl-stop"); b.type = "button"; b.disabled = true;
+        b.style.left = P[i + 1][0] + "px"; b.style.top = P[i + 1][1] + "px"; b.style.setProperty("--hue", (d.boxes[i] && d.boxes[i].hue || 0) + "deg");
         b.setAttribute("aria-label", "डिब्बा " + (i + 1));
         b.innerHTML = '<span class="jl-gift-vis"><img class="gift-closed" src="' + d.closed + '" alt=""><img class="gift-ribbon gift-ribbon-left" src="' + d.closed + '" alt="">' +
           '<img class="gift-ribbon gift-ribbon-right" src="' + d.closed + '" alt=""><img class="gift-open" src="' + d.open + '" alt=""></span><span class="jl-gift-tick">✓</span>';
         return b; });
-      let busy = true, line = "prompt", cur = null;
-      const W = { live: ()=> cur === null && solved.size < Q.length, busy: ()=> busy }; C.waits.push(W);
-      const idle = JK.idle(C, async ()=>{ if(busy || cur !== null) return; const b = boxes.find((x, i)=> !solved.has(i)); if(b) placeNudge(b);
-        busy = true; await C.say(line); busy = false; });
+      const end = P[P.length - 1], shop = JK.add(map, "div", "jl-shop");
+      shop.style.left = end[0] + "px"; shop.style.top = end[1] + "px";
+      shop.innerHTML = '<div class="jl-awning"></div><div class="jl-sign"><img src="' + d.shop + '" alt=""></div><img class="jl-plate" src="' + d.plate + '" alt="">';
+      /* Muniya: her feet beside the stop she is at (start: on the start pad; boxes: left of the box; shop: left of the shop) */
+      const mu = JK.add(map, "img", "jl-muniya"); mu.src = d.muniya; mu.alt = "मुनिया"; mu.draggable = false;
+      const OFF = k => k === 0 ? [0, 34] : k === P.length - 1 ? [-118, 86] : [-78, 50];
+      const place = (x, y)=>{ mu.style.left = x + "px"; mu.style.top = y + "px"; };
+      place(P[0][0] + OFF(0)[0], P[0][1] + OFF(0)[1]);
+      /* a walk from point k to k + 1 along the path, three little hops on the way; the stretch turns gold behind her */
+      const walk = k => new Promise(res =>{
+        const e = lit[k], L = e.getTotalLength(), o0 = OFF(k), o1 = OFF(k + 1), N = 30, HOPS = 3, frames = [];
+        for(let j = 0; j <= N; j++){ const t = j / N, p = e.getPointAtLength(L * t), h = Math.abs(Math.sin(t * Math.PI * HOPS)) * 22;
+          frames.push({ left: (p.x + o0[0] + (o1[0] - o0[0]) * t) + "px", top: (p.y + o0[1] + (o1[1] - o0[1]) * t - h) + "px" }); }
+        e.classList.add("on"); PVSFX.move();
+        [1, 2, 3].forEach(n => setTimeout(()=>{ if(C.alive()) PVSFX.appear(); }, (1500 / HOPS) * n - 40));
+        const last = frames[frames.length - 1];
+        const fin = ()=>{ place(parseFloat(last.left), parseFloat(last.top)); res(); };
+        const an = JK.reduce() ? null : mu.animate(frames, { duration: 1500, easing: "linear" });
+        if(an) an.onfinish = fin; else fin();
+      });
+      let at = -1, cur = null, busy = true;
       const header = t =>{ $("promptText").textContent = t; };
-      const toBoard = async ()=>{
-        qv.hidden = true; qv.innerHTML = ""; board.hidden = false; cur = null; C.cur = line;
-        header(solved.size ? d.next_hi : slide.prompt_hi);
-        boxes.forEach((b, i)=>{ b.disabled = solved.has(i); b.classList.toggle("solved", solved.has(i)); });
-        setSwMood("talk"); busy = true; await C.say(line); setSwMood("point"); busy = false; idle.arm();
+      const W = { live: ()=> cur === null && at >= 0 && !state.locked, busy: ()=> busy }; C.waits.push(W);
+      const idle = JK.idle(C, async ()=>{ if(busy || cur !== null || at < 0) return; placeNudge(boxes[at]); busy = true; await C.say("prompt"); busy = false; });
+      /* the box Muniya stands at bounces and asks to be opened */
+      const invite = async ()=>{
+        boxes.forEach((b, i)=>{ b.classList.toggle("next", i === at); b.disabled = i !== at; });
+        header(slide.prompt_hi); setSwMood("talk"); busy = true; await C.say("prompt"); setSwMood("point"); busy = false; idle.arm();
       };
+      const quest = JK.add(wrap, "div", "jl-quest"); quest.hidden = true;
       boxes.forEach((b, i)=> b.addEventListener("click", ()=>{
-        if(busy || cur !== null || solved.has(i) || !C.alive()) return;
-        busy = true; idle.stop(); stopNudge(); stopAudio(); cur = i;
+        if(busy || i !== at || cur !== null || !C.alive()) return;
+        busy = true; idle.stop(); stopNudge(); stopAudio(); cur = i; b.classList.remove("next"); b.disabled = true;
         playSfxFile("sfx_gift_open", 0.8); b.classList.add("is-opening");
         JK.run(C, async ()=>{
-          await C.wait(1100); b.classList.remove("is-opening");
-          board.hidden = true; qv.hidden = false; qv.innerHTML = "";
+          await C.wait(1000);
           const q = Q[i], qs = { ...slide, id: slide.id + "_box" + (i + 1), audio: q.audio };
           const QC = { ...C, slide: qs, say: (role, cues)=> C.clip(audioFor(qs, role), cues, role) };
+          quest.innerHTML = ""; quest.hidden = false; quest.classList.remove("out"); void quest.offsetWidth; quest.classList.add("in");
           header(q.prompt_hi);
-          const t = JK.wordCard(qv, q.target, "target"); JK.pop(t);
+          const box = JK.add(JK.add(quest, "div", "jl-quest-in"), "div", "jl-q ref-q");
+          const t = jlQPic(JK.add(box, "div", "jl-qpics"), q.target);
           t.onclick = ()=>{ if(!isPlaying && C.alive()){ PVSFX.tap(); C.sayId(q.target.audio).catch(()=>{}); } };
           busy = false;
-          const wrong = await jlPick(QC, qv, { options: q.options, key: qs.id, signal: "rhyme_box_correct",
-            ladder: async (n, M)=>{ if(n === 2) await jlSayWithGlow(QC, "hint2", M.els.map(b => [b, b._o.word])); else if(n >= 3) placeNudge(M.right); },
+          const wrong = await jlPick(QC, box, { options: q.options, key: qs.id, signal: "rhyme_box_correct", ref: true,
+            ladder: async (n, M)=>{ if(n === 2) await jlSayWithGlow(QC, "hint2", M.els.map(x => [x, x._o.word])); else if(n >= 3) placeNudge(M.right); },
             /* the question, then each option comes in as its own word is said (user 2026-11-04) */
             onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{
-              for(const b of M.els){ M.show(b); await C.sayId(b._o.audio); await C.wait(150); }
+              for(const x of M.els){ M.show(x); await C.sayId(x._o.audio); await C.wait(150); }
               setSwMood("point"); M.ready(); }).catch(()=>{}); } });
-          stopNudge();
-          recordResult(qs, wrong === 0);
-          solved.add(i); line = "next";
-          if(solved.size === Q.length){ state.locked = true; GameBus.emit("rhyme_boxes_done", { slide_id: slide.id, phase: slide.phase }); completeSlide(true); return; }
-          await toBoard();
+          stopNudge(); recordResult(qs, wrong === 0);
+          b.classList.remove("is-opening"); b.classList.add("solved");
+          quest.classList.remove("in"); quest.classList.add("out"); await C.wait(380); quest.hidden = true; quest.innerHTML = ""; cur = null;
+          header(slide.prompt_hi); JK.pop(b.querySelector(".jl-gift-tick")); PVSFX.appear();
+          await C.wait(350);
+          if(i === Q.length - 1){
+            busy = true; state.locked = true;
+            await walk(i + 1);                                    // to the shop
+            shop.classList.add("cheer"); sfxCorrect(); try{ confettiCannon(); }catch(e){} setSwMood("happy");
+            GameBus.emit("rhyme_boxes_done", { slide_id: slide.id, phase: slide.phase });
+            await C.wait(1900); completeSlide(true); return;
+          }
+          await walk(i + 1); at = i + 1;
+          await invite();
         });
       }));
-      JK.speaker(C);
-      JK.run(C, async ()=>{ await C.wait(300); boxes.forEach((b, i)=> setTimeout(()=>{ if(C.alive()){ JK.pop(b); PVSFX.appear(); } }, i * 110)); await C.wait(700); await toBoard(); });
+      JK.speaker(C, async ()=>{ if(cur !== null) return; idle.stop(); await C.say("prompt"); idle.arm(); });
+      JK.run(C, async ()=>{
+        await C.wait(300);
+        boxes.forEach((b, i)=> setTimeout(()=>{ if(C.alive()){ JK.pop(b); PVSFX.appear(); } }, i * 120));
+        await C.wait(900);
+        await walk(0); at = 0;
+        await invite();
+      });
     }
   },
 
@@ -1952,6 +2017,7 @@ const ASSET_SIZES = {
   "assets/images/haath.webp": 17160,
   "assets/images/halwai_cover.webp": 38388,
   "assets/images/hathi.webp": 24844,
+  "assets/images/map_muniya.webp": 38354,
   "assets/images/mela.webp": 15830,
   "assets/images/nudge_hand_ref.webp": 10828,
   "assets/images/obj_chashni.webp": 34328,
@@ -2013,7 +2079,6 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_box6.ogg": 22865,
   "assets/voiceover/vo_box6_hint2.ogg": 18691,
   "assets/voiceover/vo_box_intro.ogg": 25617,
-  "assets/voiceover/vo_box_next.ogg": 22133,
   "assets/voiceover/vo_cel.ogg": 14809,
   "assets/voiceover/vo_g1_correct.ogg": 33932,
   "assets/voiceover/vo_g1_hint2.ogg": 26445,

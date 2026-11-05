@@ -61,7 +61,6 @@
    "vo_box6": "assets/voiceover/vo_box6.ogg",
    "vo_box6_hint2": "assets/voiceover/vo_box6_hint2.ogg",
    "vo_box_intro": "assets/voiceover/vo_box_intro.ogg",
-   "vo_box_next": "assets/voiceover/vo_box_next.ogg",
    "vo_cel": "assets/voiceover/vo_cel.ogg",
    "vo_g1_correct": "assets/voiceover/vo_g1_correct.ogg",
    "vo_g1_hint2": "assets/voiceover/vo_g1_hint2.ogg",
@@ -187,7 +186,6 @@
    "vo_box6": "हाथ के साथ कौन-सा शब्द तुकांत है?",
    "vo_box6_hint2": "पैर, नाक, साथ।",
    "vo_box_intro": "डिब्बे को खोलने के लिए उस पर टैप कीजिए।",
-   "vo_box_next": "किसी भी एक डिब्बे पर टैप कीजिए।",
    "vo_cel": "शाबाश! आपने तुकांत शब्द पहचानना सीख लिया।",
    "vo_g1_correct": "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।",
    "vo_g1_hint2": "इस शब्द के अंत में आई की आवाज़ नहीं है।",
@@ -538,21 +536,6 @@
      ]
     ],
     "d": 4176
-   },
-   "vo_box_next": {
-    "s": 323,
-    "e": 2656,
-    "segs": [
-     [
-      323,
-      2083
-     ],
-     [
-      2209,
-      2656
-     ]
-    ],
-    "d": 3648
    },
    "vo_cel": {
     "s": 280,
@@ -3043,13 +3026,48 @@
    "type": "RHYME_BOXES",
    "prompt_hi": "डिब्बे को खोलने के लिए उसपर टैप कीजिए।",
    "audio": {
-    "prompt": "vo_box_intro",
-    "next": "vo_box_next"
+    "prompt": "vo_box_intro"
    },
    "data": {
-    "next_hi": "किसी भी एक डिब्बे पर टैप कीजिए।",
     "closed": "assets/images/gift_closed.webp",
     "open": "assets/images/gift_open.webp",
+    "muniya": "assets/images/map_muniya.webp",
+    "shop": "assets/images/halwai_cover.webp",
+    "plate": "assets/images/obj_jalebi.webp",
+    "path": [
+     [
+      70,
+      360
+     ],
+     [
+      225,
+      225
+     ],
+     [
+      395,
+      370
+     ],
+     [
+      565,
+      225
+     ],
+     [
+      735,
+      370
+     ],
+     [
+      905,
+      225
+     ],
+     [
+      1070,
+      370
+     ],
+     [
+      1180,
+      215
+     ]
+    ],
     "boxes": [
      {
       "hue": 0
