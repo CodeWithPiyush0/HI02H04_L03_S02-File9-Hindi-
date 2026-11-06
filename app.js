@@ -2621,9 +2621,19 @@ function boot(){
   /* ...but not when the greeting has already been heard or is playing now, and never on the play button
      itself - tapping the live gold button used to restart the greeting a split second before its click
      silenced it again. */
-  window.addEventListener("pointerdown", function once(ev){ window.removeEventListener("pointerdown", once);
-    if(ev && ev.target && ev.target.closest && ev.target.closest("#sgBtn")) return;
-    if(!_greetingHeard && !isPlaying) playLanding(); }, { once:true });
+  /* user 2026-11-06 (live: "the VO does not play until I tap the speaker"): a tap ANYWHERE on the landing starts a
+     blocked greeting. Two fixes: (1) the events a browser counts as the gesture that unblocks sound - click / touchend /
+     keydown; pointerdown is NOT one for a finger on phones and tablets, so the old pointerdown try was blocked again;
+     (2) it keeps listening until the greeting really plays (the old one went after its first try, blocked or not).
+     "Really plays" = the clip element is running - not isPlaying, which stays on for the 1.2s silent beat a blocked
+     start falls back to. The play button and the speaker keep their own handlers. */
+  const GESTURES = ["click", "touchend", "keydown"];
+  const tapStartsGreeting = (ev)=>{
+    if(_greetingHeard || !onLandingNow()){ GESTURES.forEach(t => window.removeEventListener(t, tapStartsGreeting, true)); return; }
+    if(ev && ev.target && ev.target.closest && ev.target.closest("#sgBtn, #sgVo")) return;
+    if(voEl.paused) playLanding();
+  };
+  GESTURES.forEach(t => window.addEventListener(t, tapStartsGreeting, true));
 
   $("sgBtn").onclick = ()=>{
     if(startWaiting()){                 // still waiting for the greeting: a tap can only START it
