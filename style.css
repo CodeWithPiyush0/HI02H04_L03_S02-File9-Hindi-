@@ -2386,6 +2386,12 @@ body.vo-busy #slideHost .pv-ans, body.vo-busy #navBtn{pointer-events:none !impor
 .sg-art-card .sg-card::before{background-image:url("assets/images/title_art.webp") !important;background-size:cover !important;background-position:center 38% !important;}
 .sg-art-card #sgTitle{position:absolute !important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .sg-art-card #sgHero{display:none;}
+/* the card: File4's (MTG2A04_L01_S01 .sg-card.sg-scene, user 2026-11-06) - 1040x574, the painting's own 16:9-ish shape,
+   an 8px white border, radius 40, the picture filling it; the start_card frame is not used */
+.sg-art-card .sg-card{width:1040px;height:574px;background:none;border:8px solid #fff;border-radius:40px;box-shadow:0 18px 40px rgba(0,47,118,.25);}
+.sg-art-card .sg-card::before{inset:0;border-radius:32px;background-position:center !important;}
+.sg-art-card .sg-fx{inset:0;border-radius:32px;}
+.start-gate.sg-art-card .sg-card .sg-btn,.start-gate.sg-art-card .sg-card .sg-btn.sg-waiting{bottom:30px;}   /* File4's: inside the picture, 30px up */
 
 /* while a voice line plays nothing on the page takes a tap (File6's vo-busy rule, for these screens) */
 body.vo-busy #slideHost .jl-opt, body.vo-busy #slideHost .jl-card, body.vo-busy #slideHost .jl-w,
