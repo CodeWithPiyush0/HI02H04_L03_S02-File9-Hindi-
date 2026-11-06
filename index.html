@@ -189,8 +189,8 @@
   "rhyme_find_done",
   "rhyme_pick_correct",
   "rhyme_judge_correct",
-  "rhyme_box_correct",
-  "rhyme_boxes_done",
+  "rhyme_ring_correct",
+  "rhyme_ring_done",
   "mastery_score",
   "lesson_completed"
  ],
@@ -211,7 +211,6 @@
    "vo_box5_hint2": "assets/voiceover/vo_box5_hint2.ogg",
    "vo_box6": "assets/voiceover/vo_box6.ogg",
    "vo_box6_hint2": "assets/voiceover/vo_box6_hint2.ogg",
-   "vo_box_intro": "assets/voiceover/vo_box_intro.ogg",
    "vo_cel": "assets/voiceover/vo_cel.ogg",
    "vo_g1_correct": "assets/voiceover/vo_g1_correct.ogg",
    "vo_g1_hint2": "assets/voiceover/vo_g1_hint2.ogg",
@@ -336,7 +335,6 @@
    "vo_box5_hint2": "दाना, गीत, ढोल।",
    "vo_box6": "हाथ के साथ कौन-सा शब्द तुकांत है?",
    "vo_box6_hint2": "पैर, नाक, साथ।",
-   "vo_box_intro": "डिब्बे को खोलने के लिए उस पर टैप कीजिए।",
    "vo_cel": "शाबाश! आपने तुकांत शब्द पहचानना सीख लिया।",
    "vo_g1_correct": "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।",
    "vo_g1_hint2": "इस शब्द के अंत में आई की आवाज़ नहीं है।",
@@ -668,25 +666,6 @@
      ]
     ],
     "d": 3408
-   },
-   "vo_box_intro": {
-    "s": 266,
-    "e": 3133,
-    "segs": [
-     [
-      266,
-      2261
-     ],
-     [
-      2391,
-      2572
-     ],
-     [
-      2700,
-      3133
-     ]
-    ],
-    "d": 4176
    },
    "vo_cel": {
     "s": 280,
@@ -3174,69 +3153,22 @@
    "id": "P1",
    "phase": "practice",
    "eis": "enactive",
-   "type": "RHYME_BOXES",
-   "prompt_hi": "डिब्बे को खोलने के लिए उसपर टैप कीजिए।",
-   "audio": {
-    "prompt": "vo_box_intro"
-   },
+   "type": "RING_TOSS",
+   "prompt_hi": "सही तुकांत शब्द वाली बोतल पर टैप कीजिए।",
+   "audio": {},
    "data": {
-    "closed": "assets/images/gift_closed.webp",
-    "open": "assets/images/gift_open.webp",
-    "muniya": "assets/images/map_muniya.webp",
-    "shop": "assets/images/halwai_cover.webp",
-    "plate": "assets/images/obj_jalebi.webp",
-    "path": [
-     [
-      70,
-      360
-     ],
-     [
-      225,
-      225
-     ],
-     [
-      395,
-      370
-     ],
-     [
-      565,
-      225
-     ],
-     [
-      735,
-      370
-     ],
-     [
-      905,
-      225
-     ],
-     [
-      1070,
-      370
-     ],
-     [
-      1180,
-      215
-     ]
-    ],
-    "boxes": [
+    "prize": "assets/images/obj_jalebi.webp",
+    "bg": "mela",
+    "stall": "assets/images/ringtoss_stall.webp",
+    "bottles": [
      {
-      "hue": 0
+      "color": "#F03E3E"
      },
      {
-      "hue": 32
+      "color": "#2F9BF0"
      },
      {
-      "hue": 110
-     },
-     {
-      "hue": 205
-     },
-     {
-      "hue": 262
-     },
-     {
-      "hue": 312
+      "color": "#3DC93D"
      }
     ],
     "questions": [

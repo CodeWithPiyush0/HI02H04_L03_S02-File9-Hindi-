@@ -174,16 +174,14 @@ BOX = [("राजा का तुकांत शब्द पहचानि�
 questions = [{"prompt_hi": q, "audio": {"prompt": vo(f"vo_box{i}", q), "hint2": vo(f"vo_box{i}_hint2", ", ".join(o) + "।")},
               "target": {"word": t, "img": IMG(k), "audio": wd(t)}, "options": opts(o, a)}
              for i, (q, t, k, o, a) in enumerate(BOX, 1)]
-slides.append({"id": "P1", "phase": "practice", "eis": "enactive", "type": "RHYME_BOXES", "prompt_hi": "डिब्बे को खोलने के लिए उसपर टैप कीजिए।",
-               # the jalebi shop journey (user 2026-11-05): the boxes are opened in turn along the path, so each one is asked
-               # with the deck's first line ("किसी भी एक डिब्बे पर टैप कीजिए।" - "any box" - no longer fits)
-               "audio": {"prompt": vo("vo_box_intro", "डिब्बे को खोलने के लिए उस पर टैप कीजिए।")},
-               "data": {"closed": IMG("gift_closed"), "open": IMG("gift_open"),
-                        "muniya": IMG("map_muniya"), "shop": IMG("halwai_cover"), "plate": IMG("obj_jalebi"),
-                        # the path in the map's px (1253 x 500): start, the six boxes, the halwai's shop
-                        "path": [[70, 360], [225, 225], [395, 370], [565, 225], [735, 370], [905, 225], [1070, 370], [1180, 215]],
-                        # six colours of the one box (user 2026-11-03): red, orange, green, blue, purple, pink
-                        "boxes": [{"hue": h} for h in (0, 32, 110, 205, 262, 312)], "questions": questions}})
+# deck pages 19 (x6), as a game (user 2026-11-05: gamified, not a journey) - the mela ring-toss stall: each question's
+# bottles carry its options; a right throw wins a jalebi for Muniya's shelf. The deck's boxes give way to the stall, so its
+# box lines ("डिब्बे को खोलने के लिए…", "किसी भी एक डिब्बे…") are not used; each question's own line asks it.
+slides.append({"id": "P1", "phase": "practice", "eis": "enactive", "type": "RING_TOSS", "prompt_hi": "सही तुकांत शब्द वाली बोतल पर टैप कीजिए।",
+               "audio": {},
+               "data": {"prize": IMG("obj_jalebi"), "bg": "mela",     # the mela ground (user's art: ringtoss_bg, in CSS)
+                        "stall": IMG("ringtoss_stall"),                                       # the user's stall art (2026-11-05)
+                        "bottles": [{"color": c} for c in ("#F03E3E", "#2F9BF0", "#3DC93D")], "questions": questions}})
 slides.append({"id": "REWARD", "phase": "practice", "eis": "iconic", "type": "TROPHY_REWARD", "prompt_hi": "",
                "audio": {}, "data": {"image": IMG("trophy"), "no_head": True}})
 slides.append({"id": "CEL", "phase": "practice", "eis": "enactive", "type": "CELEBRATION", "prompt_hi": "",
@@ -282,7 +280,7 @@ card = {
     "scaffold_rules": {"nudge_timeout_ms": {"tutorial": 7000, "guided": 7000, "practice": 7000, "independent": 7000},
                        "max_attempts": 3},
     "signals_expected": ["slide_entered", "slide_completed", "poem_read", "rhyme_find_done", "rhyme_pick_correct",
-                         "rhyme_judge_correct", "rhyme_box_correct", "rhyme_boxes_done", "mastery_score", "lesson_completed"],
+                         "rhyme_judge_correct", "rhyme_ring_correct", "rhyme_ring_done", "mastery_score", "lesson_completed"],
     "assets": {"audio_ext": "ogg", "img_ext": "webp",
                "audio": {k: f"assets/voiceover/{k}.ogg" for k in AUDIO_IDS},
                "audio_text": {k: VO[k] for k in sorted(VO)},
