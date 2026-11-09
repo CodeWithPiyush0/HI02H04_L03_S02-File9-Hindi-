@@ -996,6 +996,8 @@ function jlWordFracs(id, words, fromEnd){
     words.forEach((w, k)=>{ while(j < toks.length && clean(toks[j].textContent) !== clean(w)) j++; at[k] = j < toks.length ? j : -1; j++; }); }
   return at.map(i => i >= 0 && sched[i] ? sched[i][0] / tm.d : null);
 }
+/* is this clip on disk? (tools/lessons.py measures every clip it finds - a line still to be recorded has no timing) */
+function jlHasClip(id){ return !!(id && CARD.assets && CARD.assets.audio_timing && CARD.assets.audio_timing[id]); }
 /* a card lights for a moment as the voice says its word (hint 2: "नचाई, चूल्हा, जलेबी") */
 function jlSayGlow(el){ if(!el) return; el.classList.remove("say-glow"); void el.offsetWidth; el.classList.add("say-glow"); setTimeout(()=> el.classList.remove("say-glow"), 900); }
 
@@ -1064,12 +1066,16 @@ function jlPick(C, parent, cfg){
     if(cfg.onReady) cfg.onReady(M); else { M.showAll(); M.ready(); }
   });
 }
-/* the question's line, the options coming in as it names them (its last words), then the child's turn */
+/* the question's line, then the options come in one by one, silently (SME 2026-11-09: "Options एक-एक करके आएंगे पर audio
+   नहीं आएगा" - the question clips now end at the question), then the child's turn */
+const JL_OPT_STEP_MS = 450;
+async function jlShowOptions(C, M){
+  for(const b of M.els){ if(b.classList.contains("in")) continue; M.show(b); await C.wait(JL_OPT_STEP_MS); }
+}
 function jlAskWithOptions(C, M, role, extra, onFirstOption){
-  const id = C.slide.audio && C.slide.audio[role], f = jlWordFracs(id, M.els.map(b => b._o.word), true);
   setSwMood("talk");
-  const cues = M.els.map((b, i)=> [f[i], ()=>{ if(i === 0 && onFirstOption) onFirstOption(); M.show(b); }]).concat(extra || []);
-  return C.say(role, cues).then(()=>{ if(onFirstOption) onFirstOption(); setSwMood("point"); M.ready(); }, ()=>{});
+  return C.say(role, extra || []).then(async ()=>{ if(onFirstOption) onFirstOption(); setSwMood("point");
+    await jlShowOptions(C, M); M.ready(); }).catch(()=>{});
 }
 /* hint 2: the options (or the pictures) said again, each lighting as it is said. items: [[element, word], ...] */
 function jlSayWithGlow(C, role, items){
@@ -1106,14 +1112,16 @@ function jlWordSchedule(words, tm){
   return out;
 }
 /* the reference's evWordKaraoke: readingMs = the child reading (an even beat per word); else it follows the clip that
-   plays - by its measured timing (tm), or by the words' length. Returns the stop function. */
-function jlKaraoke(words, readingMs, tm){
+   plays - by its measured timing (tm), or by the words' length. onWord(i): called as each word lights (page 7's board).
+   Returns the stop function. */
+function jlKaraoke(words, readingMs, tm, onWord){
   if(!words.length) return ()=>{};
   const weights = words.map(w => readingMs ? 1 : Math.max(1, Array.from(w.textContent || "").length + (/[।!?]$/.test(w.textContent) ? 3 : /[,;:]$/.test(w.textContent) ? 1 : 0)));
   const total = weights.reduce((a, b)=> a + b, 0), t0 = performance.now(), fallback = readingMs || Math.max(900, total * 65);
   const sched = !readingMs && tm ? jlWordSchedule(words, tm) : null;
   let active = -1;
-  const show = n =>{ if(n === active) return; words.forEach((w, i)=> w.classList.toggle("now", i === n)); active = n; };
+  const show = n =>{ if(n === active) return; words.forEach((w, i)=> w.classList.toggle("now", i === n)); active = n;
+    if(onWord && n >= 0) try{ onWord(n); }catch(e){ console.error(e); } };
   const iv = setInterval(()=>{
     if(!words[0].isConnected){ clearInterval(iv); return; }
     const a = currentAudio, live = !readingMs && a && isFinite(a.duration) && a.duration > 0 && !a.paused;
@@ -1182,7 +1190,10 @@ const JalebiModules = {
       const pic = JK.add(wrap, "div", "jl-read-pic");
       const im = JK.add(pic, "img", "jl-read-img"); im.src = d.image; im.alt = "";
       const cap = JK.add(wrap, "div", "jl-read-cap" + (d.lines.length > 1 ? " wrap" : ""));
-      const rows = d.lines.map(l => jlLine(cap, l));
+      /* the lines in one block, centred in the box, each line starting at the block's left edge (SME 2026-11-09: "दोनों लाइन
+         के पहले शब्द एक ही जगह से शुरू करने हैं") */
+      const linesBox = JK.add(cap, "div", "jl-read-lines");
+      const rows = d.lines.map(l => jlLine(linesBox, l));
       const words = rows.flatMap(r => r._w);
       const mic = JK.add(cap, "button", "jl-rmic", JL_READ_MIC); mic.type = "button"; mic.setAttribute("aria-label", "कविता पढ़ने के लिए माइक्रोफ़ोन");
       const hand = JK.add(wrap, "div", "jl-hand", '<img src="assets/images/nudge_hand_ref.webp" alt="">');
@@ -1241,40 +1252,74 @@ const JalebiModules = {
 
   POEM_RECAP: {
     /* deck page 9 - "कविता फिर से सुनिए।", on ONE page (user 2026-11-03), the poem in two halves of four lines (eight lines do
-       not fit the box): the first half is read again one by one (each word lit with the voice, as pages 3-8), then "अब इन
-       शब्दों को सुनिए। इन सभी शब्दों के अंत में आई की आवाज़ है, आइए सुनते हैं।", then its words of the deck's ten turn orange
-       one by one, each said; then - no tap - the box fades to the second half: read, its words, then what तुकांत means;
-       then →. No counter. data: { parts:[[line ...], [line ...]] } (line: {words:[{t, rhyme, audio}], audio}; rhyme: one of
-       the ten). audio: words (after the first half's lines), conclude (at the end). */
+       not fit the box). SME / user 2026-11-09: the whole poem first, in one go - each line read, its words lit with the
+       voice, each rhyme word flying into its place on the word board beside the poem as it is said (the board is there
+       from the start, one fixed size, a place per word - कढ़ाई once); the second half's lines come into the same box (only
+       the lines change, the box stays). Then "अब इन शब्दों को सुनिए। ..." and the board's words said one by one, each lit
+       as it is said; then what तुकांत means; then →. No counter.
+       data: { parts:[[line ...], [line ...]] } (line: {words:[{t, rhyme, audio}], audio}; rhyme: one of the ten).
+       audio: words (after the poem), conclude (at the end). */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host), TM = (CARD.assets && CARD.assets.audio_timing) || {};
       state.ownsAudio = true; setNavActive(false); setSwMood("point");
-      const box = JK.add(JK.add(host, "div", "jl-recap"), "div", "jl-recap-box");
+      const page = JK.add(host, "div", "jl-recap");
+      const box = JK.add(page, "div", "jl-recap-box");
+      /* the word board (SME 2026-11-09; user 2026-11-09: a fixed size, on the page from the start): a place for each rhyme
+         word of the poem (कढ़ाई, said twice in it, has one); a word flies into its place the moment the voice says it */
+      const board = JK.add(page, "div", "jl-board");
+      JK.add(board, "div", "jl-board-title").textContent = "तुकांत शब्द";
+      const bwords = JK.add(board, "div", "jl-board-words");
+      const clean = t => String(t).replace(/[।,!?]/g, "");
+      const uniq = [];
+      d.parts.flat().forEach(l => l.words.forEach(w =>{ if(w.rhyme && !uniq.some(u => u.t === clean(w.t))) uniq.push({ t: clean(w.t), audio: w.audio }); }));
+      const slots = uniq.map(u =>{ const e = JK.add(bwords, "span", "jl-board-w"); e._u = u; return e; });
+      const slotOf = t => slots.find(e => e._u.t === clean(t));
       let rows = [];
       const show = part =>{ box.innerHTML = ""; rows = part.map(l => jlLine(box, l)); };
-      const swap = async part =>{ box.classList.add("out"); await C.wait(320); show(part); box.classList.remove("out"); await C.wait(380); };
+      /* the box keeps one size for both halves (the larger) - only its lines change */
+      const fit = ()=>{ box.style.width = box.style.height = ""; let w = 0, h = 0;
+        d.parts.forEach(pt =>{ show(pt); w = Math.max(w, box.offsetWidth); h = Math.max(h, box.offsetHeight); });
+        box.style.width = w + "px"; box.style.height = h + "px"; show(d.parts[0]); };
+      /* user 2026-11-09: the next lines are written in the same box - the lines fade out and the new ones in, the box stays */
+      const swap = async part =>{ box.classList.add("lines-out"); await C.wait(320); show(part); void box.offsetWidth;
+        box.classList.remove("lines-out"); await C.wait(360); };
       const W = { live: ()=> !C.seq, busy: ()=> false }; C.waits.push(W);
-      const half = async (i, part)=>{
-        if(i) await swap(part);
-        for(const r of rows){
-          const stop = jlKaraoke(r._w, 0, TM[r._audio]);
-          try{ await C.sayId(r._audio); } finally{ stop(); }
-          await C.wait(180);
-        }
-        await C.wait(250);
-        if(i === 0 && C.has("words")) await C.say("words");
-        for(const sp of rows.flatMap(r => r._w.filter(x => x._w.rhyme))){
-          sp.classList.add("found"); JK.pop(sp); PVSFX.appear();
-          await C.sayId(sp._w.audio); await C.wait(260);
-        }
+      /* a rhyme word just said: it lights in the poem, and a copy flies from it into its place on the board */
+      const toBoard = sp =>{
+        sp.classList.add("found");
+        const e = slotOf(sp.textContent); if(!e || e.classList.contains("filled")) return;
+        e.textContent = e._u.t; e.classList.add("filled");
+        const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+        const a = sp.getBoundingClientRect(), b = e.getBoundingClientRect();
+        if(!JK.reduce()) e.animate([{ translate: ((a.left + a.width / 2 - b.left - b.width / 2) / k) + "px " + ((a.top + a.height / 2 - b.top - b.height / 2) / k) + "px", scale: 1.2 },
+                                    { translate: "0 0", scale: 1 }], { duration: 560, easing: "cubic-bezier(.3,.8,.3,1)" });
+        PVSFX.appear();
       };
+      /* SME 2026-11-09: the whole poem first, in one go (the second half in the same box, no tap) - the rhyme words going
+         to the board as they are said; then (user 2026-11-09) the board's words said again, each lit as it is said */
       const all = async ()=>{
-        setNavActive(false); show(d.parts[0]);
+        setNavActive(false); slots.forEach(e =>{ e.textContent = ""; e.classList.remove("filled", "now"); }); show(d.parts[0]);
         await C.wait(300); setSwMood("talk");
-        for(let i = 0; i < d.parts.length; i++){ await half(i, d.parts[i]); if(i < d.parts.length - 1) await C.wait(500); }
+        for(let i = 0; i < d.parts.length; i++){
+          if(i) await swap(d.parts[i]);
+          for(const r of rows){
+            const stop = jlKaraoke(r._w, 0, TM[r._audio], n =>{ if(r._w[n]._w.rhyme) toBoard(r._w[n]); });
+            try{ await C.sayId(r._audio); } finally{ stop(); }
+            r._w.filter(x => x._w.rhyme).forEach(toBoard);                 // (a word the karaoke skipped over)
+            await C.wait(180);
+          }
+        }
+        await C.wait(400);
+        if(C.has("words")) await C.say("words");
+        for(const e of slots){
+          e.classList.add("now"); JK.pop(e);
+          try{ await C.sayId(e._u.audio); } finally{ e.classList.remove("now"); }
+          await C.wait(220);
+        }
         if(C.has("conclude")){ setSwMood("teach"); await C.say("conclude"); }
         setSwMood("point"); setNavActive(true);
       };
+      fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ if(C.alive() && !C.seq) fit(); });
       show(d.parts[0]);
       JK.speaker(C, all);
       JK.run(C, all);
@@ -1296,7 +1341,8 @@ const JalebiModules = {
       /* data.ending (page 8, user 2026-11-04): the rhyming ending "ाई" of each word lights orange as the word is said, and both
          again on "आई" - an orange copy of the word over it, clipped to start where the ending starts (a colour change inside
          the word would not reach the ा: Devanagari shapes ढ़ा / ठा as one) */
-      const ends = d.ending ? [A, B].map(c => jlEnding(c.querySelector(".jl-card-word"), d.ending)) : [];
+      /* a word's own ending (page 9, SME 2026-11-09: जलेबी's "बी", चाशनी's "नी" - not rhyming, so each its own) */
+      const ends = [[A, d.a], [B, d.b]].map(([c, w])=> (w.ending || d.ending) ? jlEnding(c.querySelector(".jl-card-word"), w.ending || d.ending) : null);
       const endOn = (e, on)=>{ if(!e) return; e.classList.toggle("on", on); if(on) JK.pop(e); };
       [[A, d.a], [B, d.b]].forEach(([c, w])=> c.onclick = ()=>{ if(!open || isPlaying || !C.alive()) return; PVSFX.tap();
         c.classList.add("lit"); C.sayId(w.audio).then(()=> c.classList.remove("lit"), ()=>{}); });
@@ -1308,7 +1354,7 @@ const JalebiModules = {
         const fa = f[0] != null ? f[0] : CU.a, fb = f[1] != null ? f[1] : CU.b;
         await C.say("prompt", [[fa, ()=>{ lit(A, true); endOn(ends[0], true); }], [fb, ()=>{ lit(A, false); lit(B, true); endOn(ends[1], true); }],
                                [fb != null ? fb + .12 : CU.b_end, ()=> lit(B, false)],
-                               [f[2], ()=> ends.forEach(e => endOn(e, true))]]);
+                               [d.ending ? f[2] : null, ()=> ends.forEach(e => endOn(e, true))]]);
         lit(A, false); lit(B, false); open = true; setSwMood("point"); setNavActive(true);
       };
       JK.speaker(C, all);
@@ -1318,29 +1364,34 @@ const JalebiModules = {
 
   FIND_RHYME: {
     /* deck page 13 (guided): the poem's first four lines, no picture; "आई की आवाज़ वाले शब्द पहचानिए।" - every word says
-       itself when tapped. An आई word turns green and counts; a wrong word is said and wiggles (help 1), the 2nd wrong
-       tap in a row adds "इस शब्द के अंत में आई की आवाज़ नहीं है।" (help 2), from the 3rd one an आई word not found yet glows
-       too. All found: confetti, "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।". 7s idle: the instruction again.
+       itself when tapped. An आई word turns green, gets its number and counts on the 0/6 over the poem (SME 2026-11-09); a
+       wrong word is said and wiggles (help 1), the 2nd wrong tap in a row adds "इस शब्द के अंत में आई की आवाज़ नहीं है।"
+       (help 2), from the 3rd one an आई word not found yet glows and the hand points at it (help 3). All found: confetti, "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।". 7s idle: the instruction again.
        data: { lines:[{words:[{t, rhyme, audio}]}] }. audio: prompt, hint2, correct. */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
       const wrap = JK.add(host, "div", "jl-find");
-      const poem = JK.add(wrap, "div", "jl-poem");             // (no counter - user 2026-11-03)
+      /* the counter over the poem, and a number on each word as it is found (SME 2026-11-09: "ऊपर 0/6 ... हर शब्द के साथ
+         number आएगा" - it brings back the counter taken off on 2026-11-03) */
+      const count = JK.add(wrap, "div", "jl-count jl-find-count");
+      const poem = JK.add(wrap, "div", "jl-poem");
       const rows = d.lines.map(l => jlLine(poem, l, "chip"));
       const chips = rows.flatMap(r => r._w);
       chips.forEach(s => s.setAttribute("role", "button"));
       const targets = chips.filter(s => s._w.rhyme);
       let found = 0, wrong = 0, streak = 0, busy = true, over = false;
-      const paint = ()=>{};
+      const paint = ()=>{ count.textContent = found + "/" + targets.length; };
+      paint();
       const W = { live: ()=> !over, busy: ()=> busy }; C.waits.push(W);
       const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await C.say("prompt"); busy = false; });
       chips.forEach(s => s.addEventListener("click", ()=>{
         if(busy || over || !C.alive()) return;
-        busy = true; idle.stop(); PVSFX.tap();
+        busy = true; idle.stop(); stopNudge(); PVSFX.tap();
         JK.run(C, async ()=>{
           if(s._w.rhyme){
-            if(!s.classList.contains("found")){ s.classList.add("found"); s.classList.remove("hint-on"); JK.pop(s); found++; streak = 0; paint(); sfxCorrect(); }
+            if(!s.classList.contains("found")){ s.classList.add("found"); s.classList.remove("hint-on"); stopNudge(); JK.pop(s); found++; streak = 0; paint(); sfxCorrect();
+              JK.add(s, "b", "jl-find-num").textContent = found; JK.pop(count); }
             await C.sayId(s._w.audio);
             if(found === targets.length){
               over = true; state.locked = true; recordResult(slide, wrong === 0);
@@ -1357,7 +1408,8 @@ const JalebiModules = {
             await C.wait(450);                                   // the wrong sound first, then the word (user 2026-11-04)
             await C.sayId(s._w.audio);
             if(streak >= 2){ await C.wait(200); await C.say("hint2"); }
-            if(streak >= 3){ const t = targets.find(x => !x.classList.contains("found")); if(t){ t.classList.add("hint-on"); JK.softGlow(t); } }
+            /* hint 3 (SME 2026-11-09): a word still to find glows, and the hand points at it */
+            if(streak >= 3){ const t = targets.find(x => !x.classList.contains("found")); if(t){ t.classList.add("hint-on"); JK.softGlow(t); placeNudge(t); } }
             setSwMood("point");
           }
           busy = false; idle.arm();
@@ -1397,12 +1449,21 @@ const JalebiModules = {
           ladder: async (n, M)=>{ if(n === 1) await C.say("hint1");
             else if(n === 2) await jlSayWithGlow(C, "hint2", M.els.map(b => [b, b._o.word]));
             else { M.lock(); await C.say("hint3"); } },
+          /* user 2026-11-09: the whole card goes to the blank (shrinking into it), and only its word stays there, written
+             above the dashes (they stay); the other cards are gone, so the sentence then moves to the middle of the page */
           onRight: async b =>{ if(!blank) return;
-            const a = b.getBoundingClientRect(), z = blank.getBoundingClientRect(), k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
-            const fly = b.querySelector(".jl-opt-word"); fly.style.transition = "translate .6s cubic-bezier(.3,.8,.3,1)";
-            const fr = fly.getBoundingClientRect();
-            fly.style.translate = ((z.left + z.width / 2 - fr.left - fr.width / 2) / k) + "px " + ((z.top + z.height / 2 - fr.top - fr.height / 2) / k) + "px";
-            await C.wait(620); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden"; },
+            await C.wait(380);                                       // the card's green "right" bump first
+            const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+            const z = blank.getBoundingClientRect(), fr = b.getBoundingClientRect();
+            b.style.animation = "none"; b.style.opacity = "1"; b.style.scale = "1"; void b.offsetWidth;   // its pop-in's end state, held inline
+            b.style.transition ="translate .6s cubic-bezier(.3,.8,.3,1), scale .6s cubic-bezier(.3,.8,.3,1), opacity .25s ease .42s";
+            b.style.translate = ((z.left + z.width / 2 - fr.left - fr.width / 2) / k) + "px " + ((z.top + z.height / 2 - fr.top - fr.height / 2) / k) + "px";
+            b.style.scale = ".3"; b.style.opacity = "0";
+            await C.wait(620); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden";
+            const sent = wrap.querySelector(".jl-sentence"), s = sent.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+            sent.style.transition = "translate .55s cubic-bezier(.3,.8,.3,1)";
+            sent.style.translate = "0 " + ((w.top + w.height / 2 - s.top - s.height / 2) / k) + "px";
+            await C.wait(560); },
           onReady: M =>{
             /* the sentence read: each of its words lit as it is said (found in the line in order, after the instruction) */
             const f = sentWords.length ? jlWordFracs(slide.audio.prompt, sentWords.map(w => w._say), false) : [];
@@ -1412,6 +1473,19 @@ const JalebiModules = {
             if(last != null) extra.push([last + .06, ()=>{}]);
             return jlAskWithOptions(C, M, "prompt", extra, ()=> on(null));
           } });
+        /* the sentence complete: said again, each word lit with the voice (SME 2026-11-09: "शाबाश! सही वाक्य है- ...") - the
+           recorded line when it is on disk, else the stand-in cut from our own clips (no "सही वाक्य है") */
+        if(blank){
+          const id = [slide.audio.correct, slide.audio.correct_tmp].find(jlHasClip);
+          if(id){
+            const right = d.options.find(o => o.correct); blank._say = right.word;
+            const f = jlWordFracs(id, sentWords.map(w => w._say), false);
+            const on = w => sentWords.forEach(x => x.classList.toggle("now", x === w));
+            setSwMood("talk");
+            await C.sayId(id, sentWords.map((w, i)=> [f[i], ()=> on(w)]).concat([[.995, ()=> on(null)]]));
+            on(null); setSwMood("happy"); await C.wait(400);
+          }
+        }
         recordResult(slide, wrong === 0);
         completeSlide(wrong === 0);
       });
@@ -1448,11 +1522,13 @@ const JalebiModules = {
     /* deck pages 19 (x6), as a game (user 2026-11-05: "gamified", not a journey - the mela ring-toss stall): a stall at the
        mela, Muniya beside it and her prize shelf (six places). Each of the deck's six questions: the word's picture hangs
        on the stall, three bottles stand on the counter, each with an option word, coming in as their words are said. A
-       tapped bottle gets the ring thrown at it in an arc - the right one: the ring drops over its neck, a jalebi prize
-       flies to the prize board; a wrong one: the ring bounces off and falls back (the wrong sound, the bottle
-       wobbles), then the deck's help: 2nd wrong - the options said again, each lighting; 3rd - the hand on the right
-       bottle. Six prizes: Muniya cheers, confetti - then the trophy.
-       data: { questions:[{prompt_hi, audio:{prompt, hint2}, target, options}], prize, stall, bg, bottles:[{color}] }. */
+       tapped bottle gets the ring thrown at it in an arc - the right one: the ring drops over its neck, a star flies to
+       its place on the board (SME 2026-11-09); a wrong one: the ring bounces off and falls back (the wrong sound, the
+       bottle wobbles), then the deck's help: 2nd wrong - the options said again, each lighting orange; 3rd - the hand
+       on the right bottle, its word lit, "यह सही उत्तर है, इसपर टैप कीजिए।". Six stars: confetti - then the trophy.
+       The bottles come in one by one, silently, after the question (SME 2026-11-09).
+       data: { questions:[{prompt_hi, audio:{prompt, hint2}, target, options}], stall, bg, bottles:[{color}] }.
+       audio: hint3 (every question's). */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host), Q = d.questions;
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
@@ -1467,8 +1543,8 @@ const JalebiModules = {
       JK.add(back, "i"); JK.add(front, "i");
       const rings = [back, front];
       const shelf = JK.add(field, "div", "jl-prizes"); const slots = Q.map(()=> JK.add(shelf, "div", "jl-prize-slot"));
+      /* each question won puts a star in its place (SME 2026-11-09: a star instead of a jalebi; no three stars over the board) */
       const STAR = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5.1 10.6 11.6 1.6-8.4 8.1 2 11.5L20 29.3 9.7 34.8l2-11.5-8.4-8.1 11.6-1.6z"/></svg>';
-      const starRow = JK.add(shelf, "div", "jl-prize-stars"); starRow.innerHTML = STAR + STAR + STAR;   // one lights for every two prizes
       const kNow = ()=> parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
       const inField = el =>{ const f = field.getBoundingClientRect(), r = el.getBoundingClientRect(), k = kNow();
         return { x: (r.left - f.left) / k, y: (r.top - f.top) / k, w: r.width / k, h: r.height / k }; };
@@ -1483,7 +1559,7 @@ const JalebiModules = {
       /* the throw: a flat arc from the sand to just above the bottle's cap (the ring shrinks as it flies away);
          right - it drops over the cap, slides down the neck and settles on the bottle's shoulder with a little bounce and
          tilt; wrong - it clips the cap and bounces back to the sand */
-      const FAR = .62;
+      const FAR = .54;                                     // the ring at the bottles (smaller since 2026-11-09: the bottles are shorter)
       const throwAt = (b, right)=> new Promise(async res =>{
         const sv = inField(b.querySelector(".jl-bottle svg")), nx = sv.x + sv.w / 2, top = sv.y - 34;
         const land = sv.y + sv.h * .39;                                  // where the bottle is as wide as the ring's hole
@@ -1529,22 +1605,22 @@ const JalebiModules = {
         card.onclick = ()=>{ if(!isPlaying && C.alive()){ PVSFX.tap(); C.sayId(q.target.audio).catch(()=>{}); } };
         state.replayAudio = ()=>{ if(!isPlaying && C.alive()) QC.say("prompt").catch(()=>{}); };
         const wrong = await jlPick(QC, opts, { options: q.options, key: qs.id, signal: "rhyme_ring_correct", optClass: "jl-bottle-opt", render, throwAt,
-          ladder: async (n, M)=>{ if(n === 2) await jlSayWithGlow(QC, "hint2", M.els.map(x => [x, x._o.word])); else if(n >= 3) placeNudge(M.right.querySelector(".jl-opt-word")); },   // the hand under the word's tag - the word stays readable
-          /* the question, then each bottle comes in as its own word is said (user 2026-11-04) */
-          onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{
-            for(const x of M.els){ M.show(x); await C.sayId(x._o.audio); await C.wait(150); }
-            setSwMood("point"); M.ready(); }).catch(()=>{}); },
+          ladder: async (n, M)=>{ if(n === 2) await jlSayWithGlow(QC, "hint2", M.els.map(x => [x, x._o.word]));
+            else if(n >= 3){   // SME 2026-11-09: the same hint 3 on every question - the hand, the right word lit, its line
+              M.right.classList.add("hint-on"); placeNudge(M.right.querySelector(".jl-opt-word"));   // the hand under the word's tag - the word stays readable
+              if(jlHasClip(slide.audio && slide.audio.hint3)) await C.say("hint3"); } },
+          /* the question, then the bottles come in one by one, silently (SME 2026-11-09: no audio for the options) */
+          onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{ setSwMood("point"); await jlShowOptions(C, M); M.ready(); }).catch(()=>{}); },
           onRight: async ()=>{
-            /* the prize: a jalebi flies from the picture to Muniya's shelf, she jumps */
+            /* the prize: a star flies from the picture to its place on the board */
             const from = inField(card), to = inField(slots[i]);
-            const prize = JK.add(field, "img", "jl-prize-fly"); prize.src = d.prize; prize.style.left = (from.x + from.w / 2 - 34) + "px"; prize.style.top = (from.y + 30) + "px";
+            const prize = JK.add(field, "div", "jl-prize-fly", STAR); prize.style.left = (from.x + from.w / 2 - 34) + "px"; prize.style.top = (from.y + 30) + "px";
             const an = prize.animate([{ left: prize.style.left, top: prize.style.top, scale: 1.3 },
                                       { left: (to.x + to.w / 2 - 34 + (from.x - to.x) * .2) + "px", top: (Math.min(from.y, to.y) - 60) + "px", scale: 1.1 },
                                       { left: (to.x + to.w / 2 - 34) + "px", top: (to.y + to.h / 2 - 34) + "px", scale: .9 }],
                                      { duration: JK.reduce() ? 1 : 900, easing: "ease-in-out" });
             await new Promise(r => an.onfinish = r); prize.remove();
-            slots[i].classList.add("won"); JK.add(slots[i], "img").src = d.prize; JK.pop(slots[i]); PVSFX.appear();
-            if(i % 2 === 1){ const st = starRow.children[(i - 1) / 2]; if(st){ st.classList.add("on"); playSfxFile("sfx_star_pop_new", 0.7); } }
+            slots[i].classList.add("won"); slots[i].innerHTML = STAR; JK.pop(slots[i]); playSfxFile("sfx_star_pop_new", 0.7, ()=> PVSFX.appear());
           } });
         stopNudge(); recordResult(qs, wrong === 0);
       };
@@ -1652,14 +1728,18 @@ const JLanding = {
    fills the same area - only the density and pace change.
    The original is kept as _starBurstOld, unreferenced, to make this reversible. */
 function starBurst(){ FLNMotion.starBurst.fire({ host: "#confetti" }); }
-function clearHost(){
+/* user 2026-10-23: going back from the celebration (dev menu) left its Swifty on screen - the end screen, its button and
+   the kit's Swifty are put away whenever another page mounts; user 2026-11-09: and when the dev menu's ⌂ brings back the
+   first screen (it mounts no page, so it calls this itself) */
+function clearEndScreen(){
   document.body.classList.remove("is-end");   // r4: clear immersive end state when leaving celebration
-  /* user 2026-10-23: going back from the celebration (dev menu) left its Swifty on screen - the end screen, its button and
-     the kit's Swifty are put away whenever another page mounts */
-  { const es = $("endScreen"); if(es) es.classList.remove("show", "hint-glow");
-    const eb = $("endBtn"); if(eb){ eb.classList.remove("show", "hint-glow"); eb.disabled = false; delete eb.dataset.done; }
-    const cb = document.getElementById("celBox"); if(cb) cb.innerHTML = "";
-    const cf = $("confetti"); if(cf) cf.innerHTML = ""; state.endBtnPending = false; }
+  const es = $("endScreen"); if(es) es.classList.remove("show", "hint-glow");
+  const eb = $("endBtn"); if(eb){ eb.classList.remove("show", "hint-glow"); eb.disabled = false; delete eb.dataset.done; }
+  const cb = document.getElementById("celBox"); if(cb) cb.innerHTML = "";
+  const cf = $("confetti"); if(cf) cf.innerHTML = ""; state.endBtnPending = false;
+}
+function clearHost(){
+  clearEndScreen();
   $("slideHost").innerHTML = "";
   $("hintBtn").classList.remove("show");
   $("hintBtn").disabled = false;
@@ -2050,7 +2130,6 @@ const ASSET_SIZES = {
   "assets/images/scene_6.webp": 60058,
   "assets/images/sher.webp": 32356,
   "assets/images/title_art.webp": 212930,
-  "assets/images/trophy.webp": 80732,
   "assets/last_swifty_end.webp": 1779506,
   "assets/last_swifty_still.webp": 26456,
   "assets/mascot.webp": 8006,
@@ -2091,30 +2170,32 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_box5_hint2.ogg": 19351,
   "assets/voiceover/vo_box6.ogg": 22865,
   "assets/voiceover/vo_box6_hint2.ogg": 18691,
-  "assets/voiceover/vo_cel.ogg": 14809,
+  "assets/voiceover/vo_cel.ogg": 13057,
   "assets/voiceover/vo_g1_correct.ogg": 33932,
   "assets/voiceover/vo_g1_hint2.ogg": 26445,
   "assets/voiceover/vo_g1_prompt.ogg": 39029,
   "assets/voiceover/vo_g2_hint1.ogg": 44610,
   "assets/voiceover/vo_g2_hint2.ogg": 21780,
   "assets/voiceover/vo_g2_hint3.ogg": 41343,
-  "assets/voiceover/vo_g2_prompt.ogg": 39789,
+  "assets/voiceover/vo_g2_prompt.ogg": 11043,
   "assets/voiceover/vo_g3_hint1.ogg": 40776,
   "assets/voiceover/vo_g3_hint2.ogg": 15656,
   "assets/voiceover/vo_g3_hint3.ogg": 46504,
-  "assets/voiceover/vo_g3_prompt.ogg": 37899,
+  "assets/voiceover/vo_g3_prompt.ogg": 14839,
   "assets/voiceover/vo_g4_hint1.ogg": 45363,
   "assets/voiceover/vo_g4_hint2.ogg": 20781,
   "assets/voiceover/vo_g4_hint3.ogg": 41649,
-  "assets/voiceover/vo_g4_prompt.ogg": 40150,
+  "assets/voiceover/vo_g4_prompt.ogg": 11553,
+  "assets/voiceover/vo_g5_correct_tmp.ogg": 22073,
   "assets/voiceover/vo_g5_hint1.ogg": 43255,
   "assets/voiceover/vo_g5_hint2.ogg": 19372,
   "assets/voiceover/vo_g5_hint3.ogg": 39611,
-  "assets/voiceover/vo_g5_prompt.ogg": 47545,
+  "assets/voiceover/vo_g5_prompt.ogg": 37253,
+  "assets/voiceover/vo_g6_correct_tmp.ogg": 21810,
   "assets/voiceover/vo_g6_hint1.ogg": 43386,
   "assets/voiceover/vo_g6_hint2.ogg": 17925,
   "assets/voiceover/vo_g6_hint3.ogg": 39846,
-  "assets/voiceover/vo_g6_prompt.ogg": 76978,
+  "assets/voiceover/vo_g6_prompt.ogg": 35980,
   "assets/voiceover/vo_l1.ogg": 9866,
   "assets/voiceover/vo_l2.ogg": 9547,
   "assets/voiceover/vo_l3.ogg": 10571,
@@ -3427,7 +3508,7 @@ function buildDevNav(){
   const sync = ()=>{ const i = cur(); const s = CARD.slides[i]; if(document.activeElement !== sel) sel.value = i;
     lbl.textContent = (i+1) + "/" + CARD.slides.length + (s ? " · " + s.id : ""); };
   const go = (i)=>{ i = Math.max(0, Math.min(i, CARD.slides.length - 1)); leaveStart(); mountSlide(i); sync(); };
-  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ sg.classList.remove("hidden"); document.body.classList.add("is-start"); } };
+  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ stopAudio(); clearEndScreen(); sg.classList.remove("hidden"); document.body.classList.add("is-start"); } };
   first.onclick = ()=> go(0); prev.onclick = ()=> go(cur() - 1); next.onclick = ()=> go(cur() + 1); last.onclick = ()=> go(CARD.slides.length - 1);
   sel.onchange = ()=> go(parseInt(sel.value, 10));
   bar.append(land, first, prev, sel, lbl, next, last);

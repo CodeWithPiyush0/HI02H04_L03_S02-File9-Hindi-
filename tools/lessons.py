@@ -111,8 +111,9 @@ slides.append({"id": "T8", "phase": "tutorial", "eis": "iconic", "type": "MEET_R
 slides.append({"id": "T9", "phase": "tutorial", "eis": "iconic", "type": "MEET_RHYME", "prompt_hi": "जलेबी-चाशनी, तुकांत शब्द नहीं हैं।",
                "audio": {"prompt": vo("vo_t9", "दोनों शब्द ध्यान से सुनिए। जलेबी, चाशनी। यह दोनों मीठी चीजें हैं, लेकिन इन दोनों शब्दों के अंत में "
                                                 "आने वाली आवाज़ अलग है, इसलिए यह तुकांत शब्द नहीं हैं।")},
-               "data": {"a": {"word": "जलेबी", "img": IMG("obj_jalebi"), "audio": "vo_o_jalebi"},
-                        "b": {"word": "चाशनी", "img": IMG("obj_chashni"), "audio": "vo_o_chashni"}, "rhymes": False}})
+               "data": {"a": {"word": "जलेबी", "img": IMG("obj_jalebi"), "audio": "vo_o_jalebi", "ending": "बी"},   # SME 2026-11-09:
+                        "b": {"word": "चाशनी", "img": IMG("obj_chashni"), "audio": "vo_o_chashni", "ending": "नी"},   # बी and नी lit
+                        "rhymes": False}})
 
 # ---- GUIDED (the deck's order: pages 13, 14, 20, 21, then the two sentences) ------------------------------
 slides.append({"id": "G1", "phase": "guided", "eis": "iconic", "type": "FIND_RHYME", "prompt_hi": "आई की आवाज़ वाले शब्द पहचानिए।",
@@ -135,12 +136,12 @@ def opts(words, answer, pics=None):
 
 # deck page 14 - words only ("option me image nhi deni bs word dena hai")
 slides.append({"id": "G2", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "कढ़ाई का तुकांत शब्द पहचानिए।",
-               "audio": dict(prompt=vo("vo_g2_prompt", "कढ़ाई का तुकांत शब्द पहचानिए। नचाई, चूल्हा, जलेबी।"),
+               "audio": dict(prompt=vo("vo_g2_prompt", "कढ़ाई का तुकांत शब्द पहचानिए।"),
                              **hints(2, "कढ़ाई", ["नचाई", "चूल्हा", "जलेबी"], "नचाई")),
                "data": {"target": {"word": "कढ़ाई", "img": IMG("obj_kadai"), "audio": "vo_o_kadai"}, "options": opts(["नचाई", "चूल्हा", "जलेबी"], "नचाई")}})
 # deck page 20 - हाँ / नहीं
 slides.append({"id": "G3", "phase": "guided", "eis": "iconic", "type": "RHYME_YESNO", "prompt_hi": "मिठाई- चूल्हा, क्या यह तुकांत शब्द हैं?",
-               "audio": {"prompt": vo("vo_g3_prompt", "मिठाई, चूल्हा, क्या यह तुकांत शब्द हैं? हाँ, नहीं।"),
+               "audio": {"prompt": vo("vo_g3_prompt", "मिठाई, चूल्हा, क्या यह तुकांत शब्द हैं?"),
                          "hint1": vo("vo_g3_hint1", "शब्दों को बोलकर देखिए। क्या दोनों शब्दों की अंतिम आवाज़ समान है?"),
                          "hint2": vo("vo_g3_hint2", "मिठाई, चूल्हा।"),
                          "hint3": vo("vo_g3_hint3", "मिठाई और चूल्हा दोनों की अंतिम आवाज़ अलग-अलग है। यह तुकांत शब्द नहीं हैं।")},
@@ -149,18 +150,22 @@ slides.append({"id": "G3", "phase": "guided", "eis": "iconic", "type": "RHYME_YE
                         "yes": {"word": "हाँ", "audio": vo("vo_yes", "हाँ।")}, "no": {"word": "नहीं", "audio": vo("vo_no", "नहीं।")}}})
 # deck page 21 (first) - words only, as page 14
 slides.append({"id": "G4", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "हलवाई का तुकांत शब्द पहचानिए।",
-               "audio": dict(prompt=vo("vo_g4_prompt", "हलवाई का तुकांत शब्द पहचानिए। रजाई, पैसे, जलेबी।"),
+               "audio": dict(prompt=vo("vo_g4_prompt", "हलवाई का तुकांत शब्द पहचानिए।"),
                              **hints(4, "हलवाई", ["रजाई", "पैसे", "जलेबी"], "रजाई")),
                "data": {"target": {"word": "हलवाई", "img": IMG("halwai_cover"), "audio": "vo_o_halwai"}, "options": opts(["रजाई", "पैसे", "जलेबी"], "रजाई")}})
 # deck page 21 (second / third) - the sentences, "image with text" options; the updated deck's new VO on the first
 slides.append({"id": "G5", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "तुकांत शब्द चुनकर वाक्य पूरा कीजिए।",
-               "audio": dict(prompt=vo("vo_g5_prompt", "अब इस वाक्य को सही तुकांत शब्द चुनकर पूरा कीजिए। जंगल में नाच रहा था मोर। तभी वहाँ आया एक, खाली जगह। चोर, शेर, हाथी।"),
-                             **hints(5, "मोर", ["चोर", "शेर", "हाथी"], "चोर")),
+               "audio": dict(prompt=vo("vo_g5_prompt", "अब इस वाक्य को सही तुकांत शब्द चुनकर पूरा कीजिए। जंगल में नाच रहा था मोर। तभी वहाँ आया एक, खाली जगह।"),
+                             **hints(5, "मोर", ["चोर", "शेर", "हाथी"], "चोर"),
+                             correct=vo("vo_g5_correct", "शाबाश! सही वाक्य है- जंगल में नाच रहा था मोर, तभी वहाँ आया एक चोर।"),
+                             correct_tmp=vo("vo_g5_correct_tmp", "शाबाश! जंगल में नाच रहा था मोर, तभी वहाँ आया एक चोर।")),
                "data": {"sentence": ["जंगल में नाच रहा था मोर,", "तभी वहाँ आया एक ____।"], "pictures": True,
                         "options": opts(["चोर", "शेर", "हाथी"], "चोर", ["chor", "sher", "hathi"])}})
 slides.append({"id": "G6", "phase": "guided", "eis": "iconic", "type": "RHYME_PICK", "prompt_hi": "तुकांत शब्द चुनकर वाक्य पूरा कीजिए।",
-               "audio": dict(prompt=vo("vo_g6_prompt", "तुकांत शब्द चुनकर वाक्य पूरा कीजिए। बंदर खा रहा था केला। पास ही लगा था एक, खाली जगह। मेला, पेड़, फूल।"),
-                             **hints(6, "केला", ["मेला", "पेड़", "फूल"], "मेला")),
+               "audio": dict(prompt=vo("vo_g6_prompt", "तुकांत शब्द चुनकर वाक्य पूरा कीजिए। बंदर खा रहा था केला। पास ही लगा था एक, खाली जगह।"),
+                             **hints(6, "केला", ["मेला", "पेड़", "फूल"], "मेला"),
+                             correct=vo("vo_g6_correct", "शाबाश! सही वाक्य है- बंदर खा रहा था केला, पास ही लगा था एक मेला।"),
+                             correct_tmp=vo("vo_g6_correct_tmp", "शाबाश! बंदर खा रहा था केला, पास ही लगा था एक मेला।")),
                "data": {"sentence": ["बंदर खा रहा था केला,", "पास ही लगा था एक ____।"], "pictures": True,
                         "options": opts(["मेला", "पेड़", "फूल"], "मेला", ["mela", "ped", "phool"])}})
 
@@ -178,14 +183,13 @@ questions = [{"prompt_hi": q, "audio": {"prompt": vo(f"vo_box{i}", q), "hint2": 
 # bottles carry its options; a right throw wins a jalebi for Muniya's shelf. The deck's boxes give way to the stall, so its
 # box lines ("डिब्बे को खोलने के लिए…", "किसी भी एक डिब्बे…") are not used; each question's own line asks it.
 slides.append({"id": "P1", "phase": "practice", "eis": "enactive", "type": "RING_TOSS", "prompt_hi": "सही तुकांत शब्द वाली बोतल पर टैप कीजिए।",
-               "audio": {},
-               "data": {"prize": IMG("obj_jalebi"), "bg": "mela",     # the mela ground (user's art: ringtoss_bg, in CSS)
+               "audio": {"hint3": vo("vo_toss_hint3", "यह सही उत्तर है, इसपर टैप कीजिए।")},
+               "data": {"bg": "mela",     # the mela ground (user's art: ringtoss_bg, in CSS)
                         "stall": IMG("ringtoss_stall"),                                       # the user's stall art (2026-11-05)
                         "bottles": [{"color": c} for c in ("#F03E3E", "#2F9BF0", "#3DC93D")], "questions": questions}})
-slides.append({"id": "REWARD", "phase": "practice", "eis": "iconic", "type": "TROPHY_REWARD", "prompt_hi": "",
-               "audio": {}, "data": {"image": IMG("trophy"), "no_head": True}})
+# (the trophy page that stood here - deck page 28 - removed: user 2026-11-09; the six stars lead straight to the celebration)
 slides.append({"id": "CEL", "phase": "practice", "eis": "enactive", "type": "CELEBRATION", "prompt_hi": "",
-               "audio": {"prompt": vo("vo_cel", "शाबाश! आपने तुकांत शब्द पहचानना सीख लिया।")}, "data": {}})
+               "audio": {"prompt": vo("vo_cel", "बहुत बढ़िया, दोस्त! तुमने कमाल कर दिया!")}, "data": {}})
 
 # ---- checks ------------------------------------------------------------------------------------------
 for s in slides:
