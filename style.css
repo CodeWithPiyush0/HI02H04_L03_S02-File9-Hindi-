@@ -1790,7 +1790,7 @@ body.is-start .sg-sky{
 .tut-card.tc-pv{margin:-20px 0 -40px;}
 /* the first screen's scene is each game's own village art (assets/bg_landing_soft2.webp - a new name, so no browser keeps the old room): shown whole-width and
    cropped top / bottom (not stretched into the 2.5:1 card), and the old room art's lamp glow + lens flare are off */
-.sg-card::before{background-image:url("assets/images/title_art.webp") !important;background-size:cover !important;background-position:center 40% !important;}
+.sg-card::before{background-image:url("assets/images/title_art_v2.png") !important;background-size:cover !important;background-position:center 40% !important;}
 .sg-fx .sg-lamp,.sg-fx .sg-sun{display:none;}
 .pv-stage{position:absolute;width:1333px;height:750px;pointer-events:none;z-index:2;}
 .pv-stage > *{position:absolute;pointer-events:auto;}
@@ -2383,7 +2383,7 @@ body.vo-busy #slideHost .pv-ans, body.vo-busy #navBtn{pointer-events:none !impor
    green when right, amber shake when wrong).
    ====================================================================================================== */
 /* the landing: the lesson's title art in the card (its title is painted in it - the text title is for screen readers) */
-.sg-art-card .sg-card::before{background-image:url("assets/images/title_art.webp") !important;background-size:cover !important;background-position:center 38% !important;}
+.sg-art-card .sg-card::before{background-image:url("assets/images/title_art_v2.png") !important;background-size:cover !important;background-position:center 38% !important;}
 .sg-art-card #sgTitle{position:absolute !important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .sg-art-card #sgHero{display:none;}
 /* the card: File4's (MTG2A04_L01_S01 .sg-card.sg-scene, user 2026-11-06) - 1040x574, the painting's own 16:9-ish shape,
@@ -2669,20 +2669,21 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 .jl-bottle-opt.correct .jl-opt-word,.jl-bottle-opt.hint-on .jl-opt-word{border-color:#00B132;background:#EFFBF2;box-shadow:0 5px 0 #00862A,0 9px 14px rgba(0,80,20,.22);}
 .jl-bottle-opt.say-glow .jl-opt-word{border-color:#FF8A00;background:#FFF1E0;color:#E06A00;box-shadow:0 5px 0 #D96F00,0 0 0 7px rgba(255,138,0,.30);}   /* hint 2 in orange (SME 2026-11-09) */
 .jl-bottle-opt:active{translate:0 2px;}
-/* the ring: red and white stripes, a glossy band, in two halves (.back = the far half, .front = the near half); it shrinks
+/* the ring: glossy coral, turquoise and gold, in two halves (.back = the far half, .front = the near half); it shrinks
    as it flies away; once on a bottle the far half goes behind the bottle (the bottles' layer is 4), the near half in front */
-.jl-ring{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;z-index:8;pointer-events:none;}
+.jl-ring{position:absolute;width:164px;height:164px;margin:-82px 0 0 -82px;z-index:8;pointer-events:none;}
 .jl-ring.back{clip-path:inset(0 0 50% 0);}
 .jl-ring.front{clip-path:inset(50% 0 0 0);}
-.jl-ring i{position:absolute;inset:0;border-radius:50%;transform:scaleY(.44);
-  background:radial-gradient(closest-side,transparent 60%,rgba(255,255,255,.55) 70%,transparent 78%,rgba(0,0,0,.14) 98%),
-    conic-gradient(#E8282B 0 12.5%,#FFFFFF 0 25%,#E8282B 0 37.5%,#FFFFFF 0 50%,#E8282B 0 62.5%,#FFFFFF 0 75%,#E8282B 0 87.5%,#FFFFFF 0);
-  -webkit-mask:radial-gradient(closest-side,transparent 58%,#000 60%);mask:radial-gradient(closest-side,transparent 58%,#000 60%);
-  filter:drop-shadow(0 0 1.5px #B3141A);}
-.jl-ring.back i{filter:drop-shadow(0 0 1.5px #B3141A) brightness(.88);}      /* the far half's inside, a touch in shade */
+.jl-ring i{position:absolute;inset:0;border-radius:50%;transform:scaleY(.5);
+  background:radial-gradient(ellipse at 32% 20%,rgba(255,255,255,.95),transparent 42%),
+    radial-gradient(closest-side,transparent 56%,#9A530C 58%,#FFDF72 61%,transparent 67%,rgba(255,255,255,.65) 75%,transparent 85%,rgba(107,51,0,.5) 96%,#9A530C 100%),
+    conic-gradient(from -20deg,#F45139 0 18%,#FFDA55 18% 25%,#13A9B2 25% 43%,#FFDA55 43% 50%,#F45139 50% 68%,#FFDA55 68% 75%,#13A9B2 75% 93%,#FFDA55 93% 100%);
+  -webkit-mask:radial-gradient(closest-side,transparent 56%,#000 58%);mask:radial-gradient(closest-side,transparent 56%,#000 58%);
+  box-shadow:inset 0 0 0 3px #9A530C,inset 0 -9px 9px rgba(119,50,0,.35);}
+.jl-ring.back i{filter:brightness(.86);}
 .jl-ring.front::before{content:"";position:absolute;left:8%;right:8%;top:58%;height:16%;border-radius:50%;background:rgba(120,60,0,.25);filter:blur(3px);}
 .jl-ring.flying::before,.jl-ring.on-bottle::before{opacity:0;}
-.jl-ring.on-bottle{scale:.54;}
+.jl-ring.on-bottle{scale:.64;}
 .jl-ring.back.on-bottle{z-index:3;}
 .jl-ring.front.on-bottle{z-index:6;}
 .jl-ring-burst{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;z-index:9;pointer-events:none;opacity:0;
@@ -2704,3 +2705,47 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 @keyframes jlShopCheer{0%,100%{scale:1;}50%{scale:1.1;}}
 body.vo-busy #slideHost .jl-bottle-opt{pointer-events:none !important;}
 @media (prefers-reduced-motion:reduce){ .jl-prizes.full,.jl-bottle-opt.in .jl-bottle,.jl-ring-burst{animation:none;} }
+
+/* P1: a full-stage fair stall, with Swifty as the ring-toss player. */
+.stage.ring-scene .header-row,.stage.ring-scene > .stage-inner > .mascot-wrap{display:none;}
+.stage.ring-scene .slide-stage{padding:0;}
+.ring-scene .jl-stall{left:0;top:0;width:1333px;height:750px;}
+.ring-scene .jl-stall-art{left:315px;top:50px;width:840px;height:625px;}
+.ring-scene .jl-toss-target{left:375px;right:auto;top:85px;width:720px;}
+.ring-scene .jl-toss-opts{left:395px;top:330px;}
+.ring-scene .jl-bottle{width:75px;height:155px;}
+.ring-scene .jl-prizes{left:1180px;top:430px;width:140px;gap:12px 5px;padding:14px 0;isolation:isolate;
+  box-shadow:0 6px 0 #C48E23,2px 9px 6px rgba(107,68,21,.24),6px 17px 16px rgba(107,68,21,.12);}
+.ring-scene .jl-prizes::after{content:"";position:absolute;left:-10px;right:-16px;bottom:-16px;height:22px;z-index:-1;pointer-events:none;
+  border-radius:50%;background:radial-gradient(ellipse,rgba(105,64,20,.38) 0%,rgba(105,64,20,.19) 43%,transparent 73%);filter:blur(4px);}
+.ring-scene .jl-prize-slot{width:57px;height:57px;}
+.ring-scene .jl-prizes{grid-template-columns:repeat(2,57px);}
+.jl-toss-swifty{position:absolute;left:-30px;top:300px;width:330px;height:390px;z-index:5;transform-origin:50% 92%;transition:transform .22s ease;pointer-events:none;}
+.jl-sw-actor{position:absolute;inset:0;animation:jlSwBreathe 4s ease-in-out infinite;}
+@keyframes jlSwBreathe{0%,100%{translate:0 0;}50%{translate:0 -2px;}}
+.jl-toss-swifty img{position:absolute;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 9px 5px rgba(103,62,12,.2));}
+.jl-sw-throw{opacity:0;}
+.jl-sw-grip{position:absolute;left:0;top:30px;width:330px;height:330px;background:url("assets/images/swifty_grip_sheet.webp") 0 0 / 200% 200% no-repeat;filter:drop-shadow(0 9px 5px rgba(103,62,12,.2));}
+.jl-toss-swifty.released .jl-sw-grip{background-image:url("assets/images/swifty_empty_sheet.webp");}
+.jl-toss-swifty.windup{transform:rotate(-7deg) translateX(-6px);}
+.jl-toss-swifty.throwing{transform:rotate(4deg) translateX(5px);}
+.jl-toss-swifty.throwing .jl-sw-grip{visibility:hidden;}
+.jl-toss-swifty.throwing .jl-sw-throw{opacity:1;}
+.jl-sw-bubble{position:absolute;left:22px;bottom:440px;width:270px;padding:17px 19px;background:#FFFFFF;border:3px solid #8CCBD8;border-radius:30px 30px 30px 12px;
+  box-shadow:0 4px 0 #5CA8B9,0 9px 15px rgba(26,87,102,.13);color:#0B3D8C;font-size:28px;font-weight:800;line-height:1.3;text-align:center;z-index:6;}
+.jl-sw-bubble::after{content:"";position:absolute;left:92px;bottom:-21px;width:31px;height:30px;background:#FFFFFF;
+  clip-path:polygon(0 0,100% 0,35% 100%);filter:drop-shadow(0 3px 0 #5CA8B9);}
+.jl-sw-bubble span{position:relative;z-index:1;}
+.ring-scene .jl-ring i{background:none;mask:none;-webkit-mask:none;box-shadow:none;transform:scaleY(.8);}
+.ring-scene .jl-ring i svg{display:block;width:100%;height:100%;overflow:visible;}
+.ring-scene .jl-ring.front::before{display:none;}
+.ring-scene .jl-ring.back i{filter:brightness(.94);}
+.jl-ring{transition:opacity .3s;}
+.jl-ring.clear{opacity:0;}
+.jl-ring.held{visibility:hidden;}
+.jl-sw-cheer{display:none;position:absolute;left:15px;top:-10px;width:300px;height:400px;background:url("assets/celebration/cel_shabaash.webp") 0 0 / 600% 600% no-repeat;}
+.jl-toss-swifty.celebrating{left:0;}
+.jl-toss-swifty.celebrating .jl-sw-actor{animation:none;}
+.jl-toss-swifty.celebrating .jl-sw-grip,.jl-toss-swifty.celebrating .jl-sw-throw{display:none;}
+.jl-toss-swifty.celebrating .jl-sw-cheer{display:block;}
+@media(prefers-reduced-motion:reduce){.jl-toss-swifty{transition:none;}.jl-sw-actor{animation:none;}.jl-toss-swifty.windup,.jl-toss-swifty.throwing{transform:none;}}
