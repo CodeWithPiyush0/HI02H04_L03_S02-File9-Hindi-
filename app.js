@@ -1054,7 +1054,7 @@ function jlPick(C, parent, cfg){
       show(b){ if(b && !b.classList.contains("in")){ b.classList.add("in"); PVSFX.appear(); } },
       showAll(){ els.forEach(b => M.show(b)); },
       byWord: w => els.find(b => b._o.word === w),
-      lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } }); right.classList.add("hint-on"); JK.softGlow(right); } };
+      lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } }); right.classList.remove("hint-on"); } };
     const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await (cfg.reask ? cfg.reask() : C.say("prompt")); busy = false; });
     async function onWrong(b){
       wrong++; busy = true; idle.stop(); stopNudge();
@@ -1389,8 +1389,9 @@ const JalebiModules = {
   FIND_RHYME: {
     /* deck page 13 (guided): the poem's first four lines, no picture; "आई की आवाज़ वाले शब्द पहचानिए।" - every word says
        itself when tapped. An आई word turns green, gets its number and counts on the 0/6 over the poem (SME 2026-11-09); a
-       wrong word is said and wiggles (help 1), the 2nd wrong tap in a row adds "इस शब्द के अंत में आई की आवाज़ नहीं है।"
-       (help 2), from the 3rd one an आई word not found yet glows and the hand points at it (help 3). All found: confetti, "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।". 7s idle: the instruction again.
+       wrong word is said and wiggles (help 1). After two incorrect attempts, hint 2 is spoken and the hand guides each
+       next आई word, with all other words disabled for that answer only. Finding it restores free choice and resets
+       the incorrect-attempt streak. All found: confetti, "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।". 7s idle: the instruction again.
        data: { lines:[{words:[{t, rhyme, audio}]}] }. audio: prompt, hint2, correct. */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host);
@@ -1404,13 +1405,23 @@ const JalebiModules = {
       const chips = rows.flatMap(r => r._w);
       chips.forEach(s => s.setAttribute("role", "button"));
       const targets = chips.filter(s => s._w.rhyme);
-      let found = 0, wrong = 0, streak = 0, busy = true, over = false;
+      let found = 0, wrong = 0, streak = 0, busy = true, over = false, assisted = false;
+      const guideNext = ()=>{
+        const next = targets.find(word => !word.classList.contains("found"));
+        chips.forEach(word => {
+          const locked = word !== next;
+          word.classList.toggle("locked", locked);
+          word.setAttribute("aria-disabled", String(locked));
+          word.classList.remove("hint-on");
+        });
+        if(next){ next.classList.add("hint-on"); JK.softGlow(next); placeNudge(next); }
+      };
       const paint = ()=>{ count.textContent = found + "/" + targets.length; };
       paint();
       const W = { live: ()=> !over, busy: ()=> busy }; C.waits.push(W);
       const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await C.say("prompt"); busy = false; });
       chips.forEach(s => s.addEventListener("click", ()=>{
-        if(busy || over || !C.alive()) return;
+        if(busy || over || !C.alive() || s.classList.contains("locked")) return;
         busy = true; idle.stop(); stopNudge(); PVSFX.tap();
         JK.run(C, async ()=>{
           if(s._w.rhyme){
@@ -1425,15 +1436,25 @@ const JalebiModules = {
               await C.say("correct"); await C.wait(500);
               completeSlide(wrong === 0); return;
             }
+            if(assisted){
+              assisted = false; state.scaffoldLevel = 0;
+              chips.forEach(word => {
+                const locked = word.classList.contains("found");
+                word.classList.toggle("locked", locked);
+                word.setAttribute("aria-disabled", String(locked));
+                word.classList.remove("hint-on");
+              });
+            }
           } else {
             wrong++; streak++; state.attempts = wrong; state.scaffoldLevel = Math.min(3, streak);
             GameBus.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: wrong });
             stopAudio(); sfxWrongSoft(); setSwMood("tryagain"); s.classList.add("wrong"); JK.shake(s, 7); setTimeout(()=> s.classList.remove("wrong"), 900);
             await C.wait(450);                                   // the wrong sound first, then the word (user 2026-11-04)
             await C.sayId(s._w.audio);
-            if(streak >= 2){ await C.wait(200); await C.say("hint2"); }
-            /* hint 3 (SME 2026-11-09): a word still to find glows, and the hand points at it */
-            if(streak >= 3){ const t = targets.find(x => !x.classList.contains("found")); if(t){ t.classList.add("hint-on"); JK.softGlow(t); placeNudge(t); } }
+            if(streak >= 2){
+              await C.wait(200); await C.say("hint2");
+              assisted = true; guideNext();
+            }
             setSwMood("point");
           }
           busy = false; idle.arm();
@@ -1698,7 +1719,7 @@ const JalebiModules = {
               }
             }
             else if(n >= 3){   // SME 2026-11-09: the same hint 3 on every question - the hand, the right word lit, its line
-              M.right.classList.add("hint-on"); placeNudge(M.right.querySelector(".jl-opt-word"));   // the hand under the word's tag - the word stays readable
+              M.lock(); placeNudge(M.right.querySelector(".jl-opt-word"));   // only the correct bottle remains enabled
               if(jlHasClip(slide.audio && slide.audio.hint3)) await C.say("hint3"); } },
           /* the question, then the bottles come in one by one, silently (SME 2026-11-09: no audio for the options) */
           onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{ setSwMood("point"); await jlShowOptions(C, M); M.ready();
@@ -2247,6 +2268,7 @@ const ASSET_SIZES = {
   "assets/images/swifty_toss_ready.webp": 67682,
   "assets/images/swifty_toss_throw.webp": 69114,
   "assets/images/title_art.webp": 212930,
+  "assets/images/title_art_jalebi.webp": 277790,
   "assets/images/title_art_v2.png": 1825109,
   "assets/last_swifty_end.webp": 1779506,
   "assets/last_swifty_still.webp": 26456,

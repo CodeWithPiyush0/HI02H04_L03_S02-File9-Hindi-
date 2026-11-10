@@ -1790,7 +1790,7 @@ body.is-start .sg-sky{
 .tut-card.tc-pv{margin:-20px 0 -40px;}
 /* the first screen's scene is each game's own village art (assets/bg_landing_soft2.webp - a new name, so no browser keeps the old room): shown whole-width and
    cropped top / bottom (not stretched into the 2.5:1 card), and the old room art's lamp glow + lens flare are off */
-.sg-card::before{background-image:url("assets/images/title_art_v2.png") !important;background-size:cover !important;background-position:center 40% !important;}
+.sg-card::before{background-image:url("assets/images/title_art_jalebi.webp") !important;background-size:cover !important;background-position:center 40% !important;}
 .sg-fx .sg-lamp,.sg-fx .sg-sun{display:none;}
 .pv-stage{position:absolute;width:1333px;height:750px;pointer-events:none;z-index:2;}
 .pv-stage > *{position:absolute;pointer-events:auto;}
@@ -2383,7 +2383,7 @@ body.vo-busy #slideHost .pv-ans, body.vo-busy #navBtn{pointer-events:none !impor
    green when right, amber shake when wrong).
    ====================================================================================================== */
 /* the landing: the lesson's title art in the card (its title is painted in it - the text title is for screen readers) */
-.sg-art-card .sg-card::before{background-image:url("assets/images/title_art_v2.png") !important;background-size:cover !important;background-position:center 38% !important;}
+.sg-art-card .sg-card::before{background-image:url("assets/images/title_art_jalebi.webp") !important;background-size:cover !important;background-position:center 38% !important;}
 .sg-art-card #sgTitle{position:absolute !important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .sg-art-card #sgHero{display:none;}
 /* the card: File4's (MTG2A04_L01_S01 .sg-card.sg-scene, user 2026-11-06) - 1040x574, the painting's own 16:9-ish shape,
@@ -2467,6 +2467,8 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-find{display:flex;flex-direction:column;align-items:center;gap:14px;}
 .jl-find .jl-line.chip{font-size:38px;}
 .jl-find .jl-line.chip .jl-w{cursor:pointer;margin:4px 0;}
+.jl-find .jl-w.locked{pointer-events:none;cursor:default;}
+.jl-find .jl-w.locked:not(.found){opacity:.4;}
 
 /* ---- a word with its picture ---- */
 .jl-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 18px 8px;border-radius:24px;background:#fff;

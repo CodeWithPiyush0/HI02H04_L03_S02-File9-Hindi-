@@ -12,13 +12,13 @@
      request, so without this the very first paint is unstyled. This inline rule
      lands the loader's own colour on the first frame. -->
 <style>html,body{background:#FFFFFF;margin:0;}</style>
-<link rel="stylesheet" href="style.css?v=20261110i">
+<link rel="stylesheet" href="style.css?v=20261110l">
 <!-- [loading] the landing's own files start downloading with the page, alongside style.css - not only once app.js has
      arrived and asked for them (the boot loader waits for exactly these: app.js Assets, CRIT). http(s) only: on
      file:// a preload of a fetch() fails, and local files need no head start. -->
 <script>(function(){ if(!/^https?:$/.test(location.protocol)) return;
   [["assets/fonts/baloo2-800.woff2", "font", "font/woff2"], ["assets/gif/new_landing_swiftee_anim.webp", "fetch"],
-   ["assets/startnew_bg_plain.webp", "image"], ["assets/images/title_art_v2.png", "image"]
+   ["assets/startnew_bg_plain.webp", "image"], ["assets/images/title_art_jalebi.webp", "image"]
   ].forEach(function(f){ var l = document.createElement("link"); l.rel = "preload"; l.href = f[0]; l.as = f[1];
     if(f[2]) l.type = f[2]; if(f[1] !== "image") l.crossOrigin = "anonymous"; document.head.appendChild(l); });
 })();</script>
@@ -164,7 +164,7 @@
  },
  "landing_hero": {
   "kind": "art",
-  "src": "assets/images/title_art_v2.png"
+  "src": "assets/images/title_art_jalebi.webp"
  },
  "skill_description_hi": "एक कविता पढ़कर/सुनकर उसमें आए समान तुकांत शब्दों की पहचान करता है।",
  "credits": "कविता: मधु बी. जोशी · © प्रथम एजुकेशन फ़ाउंडेशन (StoryWeaver), CC BY 4.0",
@@ -3520,6 +3520,6 @@
 
 <!-- ============ ENGINE ============ -->
 <script src="swiftpal-bridge.js"></script>   <!-- [QA 01] host bridge: Android / iOS / web - must load before app.js -->
-<script src="app.js?v=20261110i"></script>
+<script src="app.js?v=20261110l"></script>
 </body>
 </html>
