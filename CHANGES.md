@@ -77,13 +77,19 @@ Status vocabulary: ✅ DONE · ⚑ FLAGGED-BACK · ⏳ PENDING · N/C (deck slid
 ## New VO (Gemini TTS "Kore", tools/build_vo.py — EAR-CHECK before delivery)
 `vo_mic_intro`, `vo_pt_guided`, `vo_g5_prompt`, `vo_yes`, `vo_no`, `vo_cel`. Every other clip is v1's recording, unchanged.
 
-## Waiting for the Gemini key (SME 2026-11-09)
-Once the key has credit: `python tools/build_vo.py vo_g5_correct vo_g6_correct vo_toss_hint3` then `python tools/lessons.py` and `node tools/gen_asset_sizes.js`. The game picks the real lines up by itself (the stand-ins `vo_g5_correct_tmp` / `vo_g6_correct_tmp` can then be deleted).
+## Story credit (user 2026-11-10)
+Page 1 shows the StoryWeaver credit "कहानी: जलेबी | लेखक: मधु बी. जोशी | चित्रांकन: अजीत नारायण | © Pratham Education Foundation, 2020 (StoryWeaver) | CC BY 4.0 | HTML गतिविधि हेतु रूपांतरित।" (the card's `credits`), written as HI02H04_L03_S01 (Alu-Malu-Kalu) writes its own: one small grey line (12px / 600, #5B6B85) below the main card, outside it - 12px under its blue border, lined up with its outer left edge; first page only.
+
+## New VO takes (user 2026-11-10)
+96 new / updated takes (WAV masters in `_vo_source/`) replace the clips of the same name in `assets/voiceover/` - encoded with build_vo.py's chain (trim, -18.5 LUFS, 0.28 s lead, 0.36 s tail, Ogg/Opus 48k mono 32k) without its TTS speed-up. Among them the three lines that were waiting for the Gemini key: `vo_g5_correct`, `vo_g6_correct`, `vo_toss_hint3` (all three now play - checked in the browser). The stand-ins `vo_g5_correct_tmp` / `vo_g6_correct_tmp` are no longer heard and can be deleted. Not in the new set (still the earlier clips): `vo_word_6`, `vo_word_8`, `vo_word_12`, `vo_word_18`, `vo_word_21`, `vo_word_25` (page 16's picture words). Re-measured: every new clip's timing in the card, the celebration lip-sync, page 16's lip-sync (`node tools/build_toss_lipsync.cjs`), the three transition headline cues (`PHASE_GATE_CUE_MS` 3700 / 2180 / 1190). Old clips backed up outside the repo.
+
+**`python tools/lessons.py` is behind the card** - it would undo the `_clear` pictures, the title art and page 16's lip-sync. Until it is brought up to date, change the card's audio by re-measuring only (as done here), not by re-running it.
 
 ## Rebuilding
 ```
 python tools/lessons.py          # card.json + tools/vo_script.json; embeds the card in index.html, copies HI02H04_L03_S02.html
 python tools/build_vo.py         # renders any VO line not yet on disk (GEMINI_KEY in the environment; ffmpeg)
 node tools/gen_asset_sizes.js    # the preload manifest - after ANY asset change
+python tools/gen_vo_manifest.py  # lesson_vo_manifest.xlsx (File7's format) - after any VO / page change
 ```
 Dev: `index.html?slide=N` opens slide N; `?dev=1` adds the slide navigator.

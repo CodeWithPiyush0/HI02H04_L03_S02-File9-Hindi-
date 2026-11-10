@@ -279,7 +279,7 @@ card = {
     "title": {"hi": "जलेबी", "en": "Rhyming words in a poem - Jalebi"},
     "landing_hero": {"kind": "art", "src": IMG("title_art")},
     "skill_description_hi": "एक कविता पढ़कर/सुनकर उसमें आए समान तुकांत शब्दों की पहचान करता है।",
-    "credits": "कविता: मधु बी. जोशी · © प्रथम एजुकेशन फ़ाउंडेशन (StoryWeaver), CC BY 4.0",
+    "credits": "कहानी: जलेबी | लेखक: मधु बी. जोशी | चित्रांकन: अजीत नारायण | © Pratham Education Foundation, 2020 (StoryWeaver) | CC BY 4.0 | HTML गतिविधि हेतु रूपांतरित।",
     "phase_distribution": phase_n,
     "scaffold_rules": {"nudge_timeout_ms": {"tutorial": 7000, "guided": 7000, "practice": 7000, "independent": 7000},
                        "max_attempts": 3},
