@@ -49,7 +49,7 @@ def status(cid):
     if not on_disk(cid):
         return "MISSING - to record"
     if cid in NEW_TAKE:
-        return "New take (2026-11-10, _vo_source/)"
+        return "New take (_vo_source/)"
     if cid in STAND_IN:
         return "Stand-in (cut from this lesson's clips) - until " + STAND_IN[cid] + " is recorded"
     if cid == "vo_cel":
@@ -141,7 +141,11 @@ def page_rows(s, page_no):
                 "(said again after 7s idle and by the speaker)")
             add(d["target"]["audio"], "word «%s»" % d["target"]["word"], "its picture tapped - its word")
         add(au.get("hint1"), "Hint 1 (1st wrong answer)", "after the wrong sound and the wiggle (a wrong card is not coloured)")
-        add(au.get("hint2"), "Hint 2 (2nd wrong answer)", "the options said again, each card lighting orange as it is said")
+        if all(o.get("hint2") and on_disk(o["hint2"]) for o in d["options"]):
+            for o in d["options"]:
+                add(o["hint2"], "Hint 2 (2nd wrong answer) - «%s»" % o["word"], "the options said again one by one, left to right; this card lit orange while it is said")
+        else:
+            add(au.get("hint2"), "Hint 2 (2nd wrong answer)", "the options said again, each card lighting orange as it is said")
         add(au.get("hint3"), "Hint 3 (3rd wrong answer)", "the other cards fade and lock; only the right card stays")
         if d.get("sentence"):
             add(right["audio"], "correct answer - «%s»" % right["word"],
@@ -163,7 +167,8 @@ def page_rows(s, page_no):
         for w in (d["a"], d["b"]):
             add(w["audio"], "word «%s»" % w["word"], "its picture tapped - its word")
         add(au.get("hint1"), "Hint 1 (1st wrong answer)", "after the wrong sound and the wiggle (a wrong card is not coloured)")
-        add(au.get("hint2"), "Hint 2 (2nd wrong answer)", "each picture lights orange as its word is said")
+        for w in (d["a"], d["b"]):
+            add(w["audio"], "Hint 2 (2nd wrong answer) - «%s»" % w["word"], "the two words said again, left to right; this picture lit orange while it is said")
         add(au.get("hint3"), "Hint 3 (3rd wrong answer)", "the other card fades and locks; only the right one stays")
         add(right["audio"], "correct answer - «%s»" % right["word"], "the card turns green, the other goes, confetti; then the word; then the next page")
     elif ty == "RING_TOSS":
@@ -326,7 +331,7 @@ SPEC = [
               (" In the card but not heard in this build (not listed): " + ", ".join(unheard) + "." if unheard else "")),
     ("To record", ("Not on disk yet (the game skips them until they are): " + ", ".join(missing) + ".")
                   if missing else "Nothing - every clip is on disk."),
-    ("New takes in", "%d clips are the new takes of 2026-11-10 (Status 'New take'); their WAV masters are in _vo_source/. "
+    ("New takes in", "%d clips are the new takes of 2026-11-10 / 11 (Status 'New take'); their WAV masters are in _vo_source/. "
                      "The others are still the earlier clips." % sum(1 for r in recordings if r[1].startswith("New take"))),
     ("Folder", "assets/voiceover/<Audio ID>.ogg - the file name is the Audio ID."),
     ("Voice", "The new takes (_vo_source/, 2026-11-10); the clips without a new take are the earlier Gemini TTS ones (voice Kore, tools/build_vo.py)."),

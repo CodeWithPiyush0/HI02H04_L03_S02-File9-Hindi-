@@ -1101,6 +1101,14 @@ function jlAskWithOptions(C, M, role, extra, onFirstOption){
   return C.say(role, extra || []).then(async ()=>{ if(onFirstOption) onFirstOption(); setSwMood("point");
     await jlShowOptions(C, M); M.ready(); }).catch(()=>{});
 }
+/* hint 2 from one clip per card (user 2026-11-11: vo_<page>_<word>_hint2, vo_o_*): each card lights orange while its own
+   clip is said, left to right - as the ring toss does. items: [[element, clip id], ...] */
+async function jlSayEachWithGlow(C, items){
+  for(const [el, id] of items){
+    C.guard(); el.classList.add("say-glow");
+    try{ await C.sayId(id); } finally{ el.classList.remove("say-glow"); }
+  }
+}
 /* hint 2: the options (or the pictures) said again, each lighting as it is said. items: [[element, word], ...] */
 function jlSayWithGlow(C, role, items){
   const id = C.slide.audio && C.slide.audio[role], f = jlWordFracs(id, items.map(x => x[1]), false);
@@ -1213,7 +1221,8 @@ const JalebiModules = {
       const wrap = JK.add(host, "div", "jl-read");
       const pic = JK.add(wrap, "div", "jl-read-pic");
       const im = JK.add(pic, "img", "jl-read-img"); im.src = d.image; im.alt = "";
-      const cap = JK.add(wrap, "div", "jl-read-cap" + (d.lines.length > 1 ? " wrap" : ""));
+      const cap = JK.add(wrap, "div", "jl-read-cap" + (d.lines.length > 1 ? " wrap" : "") +
+        (CARD.slides[0] && CARD.slides[0].id === slide.id ? " first" : ""));    // page 1: its lines 6px bigger (user 2026-11-11)
       /* the lines in one block, centred in the box, each line starting at the block's left edge (SME 2026-11-09: "दोनों लाइन
          के पहले शब्द एक ही जगह से शुरू करने हैं") */
       const linesBox = JK.add(cap, "div", "jl-read-lines");
@@ -1495,7 +1504,10 @@ const JalebiModules = {
           /* user 2026-11-04: 1st wrong - hint 1; 2nd - the options said again, each lighting as it is said; 3rd - the others
              are disabled, then hint 3 */
           ladder: async (n, M)=>{ if(n === 1) await C.say("hint1");
-            else if(n === 2) await jlSayWithGlow(C, "hint2", M.els.map(b => [b, b._o.word]));
+            else if(n === 2){
+              /* each option's own hint-2 clip (user 2026-11-11), the one-clip line only if a page has none */
+              if(M.els.every(b => jlHasClip(b._o.hint2))) await jlSayEachWithGlow(C, M.els.map(b => [b, b._o.hint2]));
+              else await jlSayWithGlow(C, "hint2", M.els.map(b => [b, b._o.word])); }
             else { M.lock(); await C.say("hint3"); } },
           /* user 2026-11-09: the whole card goes to the blank (shrinking into it), and only its word stays there, written
              above the dashes (they stay); the other cards are gone, so the sentence then moves to the middle of the page */
@@ -1549,7 +1561,7 @@ const JalebiModules = {
       const wrap = JK.add(host, "div", "jl-q ref-q");
       const pair = JK.add(wrap, "div", "jl-qpics two"), pics = [];
       [d.a, d.b].forEach((w, i)=>{
-        const c = jlQPic(pair, w); pics.push([c, w.word]); c.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(w.audio).catch(()=>{}); } }; });
+        const c = jlQPic(pair, w); pics.push([c, w.word, w.audio]); c.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(w.audio).catch(()=>{}); } }; });
       JK.speaker(C);
       JK.run(C, async ()=>{
         await C.wait(250);
@@ -1557,7 +1569,10 @@ const JalebiModules = {
           options: [{ ...d.yes, correct: d.rhymes === true }, { ...d.no, correct: d.rhymes === false }],
           /* user 2026-11-04 (as pages 11 / 13): hint 2 says "मिठाई, चूल्हा।" - each picture lights as it is said */
           ladder: async (n, M)=>{ if(n === 1) await C.say("hint1");
-            else if(n === 2) await jlSayWithGlow(C, "hint2", pics);
+            else if(n === 2){
+              /* each picture's own word clip (vo_o_mithai, vo_o_chulha - new takes 2026-11-11), its picture lit */
+              if(pics.every(p => jlHasClip(p[2]))) await jlSayEachWithGlow(C, pics.map(p => [p[0], p[2]]));
+              else await jlSayWithGlow(C, "hint2", pics); }
             else { M.lock(); await C.say("hint3"); } },
           onReady: M => jlAskWithOptions(C, M, "prompt") });
         recordResult(slide, wrong === 0);
@@ -2317,9 +2332,12 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_g1_correct.ogg": 17248,
   "assets/voiceover/vo_g1_hint2.ogg": 13650,
   "assets/voiceover/vo_g1_prompt.ogg": 20487,
+  "assets/voiceover/vo_g2_chulha_hint2.ogg": 3647,
   "assets/voiceover/vo_g2_hint1.ogg": 22007,
   "assets/voiceover/vo_g2_hint2.ogg": 3896,
   "assets/voiceover/vo_g2_hint3.ogg": 24523,
+  "assets/voiceover/vo_g2_jalebi_hint2.ogg": 4060,
+  "assets/voiceover/vo_g2_nachai_hint2.ogg": 4161,
   "assets/voiceover/vo_g2_prompt.ogg": 10544,
   "assets/voiceover/vo_g3_hint1.ogg": 21567,
   "assets/voiceover/vo_g3_hint2.ogg": 3575,
@@ -2328,18 +2346,27 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_g4_hint1.ogg": 22576,
   "assets/voiceover/vo_g4_hint2.ogg": 4334,
   "assets/voiceover/vo_g4_hint3.ogg": 23143,
+  "assets/voiceover/vo_g4_jalebi_hint2.ogg": 4364,
+  "assets/voiceover/vo_g4_paise_hint2.ogg": 3175,
   "assets/voiceover/vo_g4_prompt.ogg": 12607,
+  "assets/voiceover/vo_g4_rajai_hint2.ogg": 3987,
+  "assets/voiceover/vo_g5_chor_hint2.ogg": 3212,
   "assets/voiceover/vo_g5_correct.ogg": 34709,
   "assets/voiceover/vo_g5_correct_tmp.ogg": 22073,
+  "assets/voiceover/vo_g5_hathi_hint2.ogg": 3328,
   "assets/voiceover/vo_g5_hint1.ogg": 23797,
   "assets/voiceover/vo_g5_hint2.ogg": 3615,
   "assets/voiceover/vo_g5_hint3.ogg": 20335,
   "assets/voiceover/vo_g5_prompt.ogg": 42210,
+  "assets/voiceover/vo_g5_sher_hint2.ogg": 3229,
   "assets/voiceover/vo_g6_correct.ogg": 31481,
   "assets/voiceover/vo_g6_correct_tmp.ogg": 21810,
   "assets/voiceover/vo_g6_hint1.ogg": 21652,
   "assets/voiceover/vo_g6_hint2.ogg": 3191,
   "assets/voiceover/vo_g6_hint3.ogg": 22163,
+  "assets/voiceover/vo_g6_mela_hint2.ogg": 3392,
+  "assets/voiceover/vo_g6_ped_hint2.ogg": 3086,
+  "assets/voiceover/vo_g6_phool_hint2.ogg": 3156,
   "assets/voiceover/vo_g6_prompt.ogg": 33357,
   "assets/voiceover/vo_l1.ogg": 8162,
   "assets/voiceover/vo_l2.ogg": 9027,
@@ -2353,11 +2380,11 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_mic_intro.ogg": 12766,
   "assets/voiceover/vo_no.ogg": 3235,
   "assets/voiceover/vo_o_chashni.ogg": 4176,
-  "assets/voiceover/vo_o_chulha.ogg": 3772,
+  "assets/voiceover/vo_o_chulha.ogg": 3828,
   "assets/voiceover/vo_o_halwai.ogg": 4340,
   "assets/voiceover/vo_o_jalebi.ogg": 4251,
   "assets/voiceover/vo_o_kadai.ogg": 4513,
-  "assets/voiceover/vo_o_mithai.ogg": 4401,
+  "assets/voiceover/vo_o_mithai.ogg": 3946,
   "assets/voiceover/vo_o_paise.ogg": 4730,
   "assets/voiceover/vo_o_rajai.ogg": 3990,
   "assets/voiceover/vo_pt_guided.ogg": 14396,

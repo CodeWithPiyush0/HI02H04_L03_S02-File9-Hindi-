@@ -12,7 +12,7 @@
      request, so without this the very first paint is unstyled. This inline rule
      lands the loader's own colour on the first frame. -->
 <style>html,body{background:#FFFFFF;margin:0;}</style>
-<link rel="stylesheet" href="style.css?v=20261110o">
+<link rel="stylesheet" href="style.css?v=20261111a">
 <!-- [loading] the landing's own files start downloading with the page, alongside style.css - not only once app.js has
      arrived and asked for them (the boot loader waits for exactly these: app.js Assets, CRIT). http(s) only: on
      file:// a preload of a fetch() fails, and local files need no head start. -->
@@ -215,9 +215,12 @@
    "vo_g1_correct": "assets/voiceover/vo_g1_correct.ogg",
    "vo_g1_hint2": "assets/voiceover/vo_g1_hint2.ogg",
    "vo_g1_prompt": "assets/voiceover/vo_g1_prompt.ogg",
+   "vo_g2_chulha_hint2": "assets/voiceover/vo_g2_chulha_hint2.ogg",
    "vo_g2_hint1": "assets/voiceover/vo_g2_hint1.ogg",
    "vo_g2_hint2": "assets/voiceover/vo_g2_hint2.ogg",
    "vo_g2_hint3": "assets/voiceover/vo_g2_hint3.ogg",
+   "vo_g2_jalebi_hint2": "assets/voiceover/vo_g2_jalebi_hint2.ogg",
+   "vo_g2_nachai_hint2": "assets/voiceover/vo_g2_nachai_hint2.ogg",
    "vo_g2_prompt": "assets/voiceover/vo_g2_prompt.ogg",
    "vo_g3_hint1": "assets/voiceover/vo_g3_hint1.ogg",
    "vo_g3_hint2": "assets/voiceover/vo_g3_hint2.ogg",
@@ -226,18 +229,27 @@
    "vo_g4_hint1": "assets/voiceover/vo_g4_hint1.ogg",
    "vo_g4_hint2": "assets/voiceover/vo_g4_hint2.ogg",
    "vo_g4_hint3": "assets/voiceover/vo_g4_hint3.ogg",
+   "vo_g4_jalebi_hint2": "assets/voiceover/vo_g4_jalebi_hint2.ogg",
+   "vo_g4_paise_hint2": "assets/voiceover/vo_g4_paise_hint2.ogg",
    "vo_g4_prompt": "assets/voiceover/vo_g4_prompt.ogg",
+   "vo_g4_rajai_hint2": "assets/voiceover/vo_g4_rajai_hint2.ogg",
+   "vo_g5_chor_hint2": "assets/voiceover/vo_g5_chor_hint2.ogg",
    "vo_g5_correct": "assets/voiceover/vo_g5_correct.ogg",
    "vo_g5_correct_tmp": "assets/voiceover/vo_g5_correct_tmp.ogg",
+   "vo_g5_hathi_hint2": "assets/voiceover/vo_g5_hathi_hint2.ogg",
    "vo_g5_hint1": "assets/voiceover/vo_g5_hint1.ogg",
    "vo_g5_hint2": "assets/voiceover/vo_g5_hint2.ogg",
    "vo_g5_hint3": "assets/voiceover/vo_g5_hint3.ogg",
    "vo_g5_prompt": "assets/voiceover/vo_g5_prompt.ogg",
+   "vo_g5_sher_hint2": "assets/voiceover/vo_g5_sher_hint2.ogg",
    "vo_g6_correct": "assets/voiceover/vo_g6_correct.ogg",
    "vo_g6_correct_tmp": "assets/voiceover/vo_g6_correct_tmp.ogg",
    "vo_g6_hint1": "assets/voiceover/vo_g6_hint1.ogg",
    "vo_g6_hint2": "assets/voiceover/vo_g6_hint2.ogg",
    "vo_g6_hint3": "assets/voiceover/vo_g6_hint3.ogg",
+   "vo_g6_mela_hint2": "assets/voiceover/vo_g6_mela_hint2.ogg",
+   "vo_g6_ped_hint2": "assets/voiceover/vo_g6_ped_hint2.ogg",
+   "vo_g6_phool_hint2": "assets/voiceover/vo_g6_phool_hint2.ogg",
    "vo_g6_prompt": "assets/voiceover/vo_g6_prompt.ogg",
    "vo_l1": "assets/voiceover/vo_l1.ogg",
    "vo_l2": "assets/voiceover/vo_l2.ogg",
@@ -344,9 +356,12 @@
    "vo_g1_correct": "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।",
    "vo_g1_hint2": "इस शब्द के अंत में आई की आवाज़ नहीं है।",
    "vo_g1_prompt": "इन पंक्तियों में, आई की आवाज़ वाले सभी शब्दों पर टैप कीजिए।",
+   "vo_g2_chulha_hint2": "चूल्हा",
    "vo_g2_hint1": "शब्दों को बोलकर देखिए। कढ़ाई से मिलती हुई आवाज़ वाला शब्द पहचानिए।",
    "vo_g2_hint2": "नचाई, चूल्हा, जलेबी।",
    "vo_g2_hint3": "कढ़ाई और नचाई दोनों तुकांत शब्द हैं। नचाई शब्द पर टैप कीजिए।",
+   "vo_g2_jalebi_hint2": "जलेबी",
+   "vo_g2_nachai_hint2": "नचाई",
    "vo_g2_prompt": "कढ़ाई का तुकांत शब्द पहचानिए।",
    "vo_g3_hint1": "शब्दों को बोलकर देखिए। क्या दोनों शब्दों की अंतिम आवाज़ समान है?",
    "vo_g3_hint2": "मिठाई, चूल्हा।",
@@ -355,18 +370,27 @@
    "vo_g4_hint1": "शब्दों को बोलकर देखिए। हलवाई से मिलती हुई आवाज़ वाला शब्द पहचानिए।",
    "vo_g4_hint2": "रजाई, पैसे, जलेबी।",
    "vo_g4_hint3": "हलवाई और रजाई दोनों तुकांत शब्द हैं। रजाई शब्द पर टैप कीजिए।",
+   "vo_g4_jalebi_hint2": "जलेबी",
+   "vo_g4_paise_hint2": "पैसे",
    "vo_g4_prompt": "हलवाई का तुकांत शब्द पहचानिए।",
+   "vo_g4_rajai_hint2": "रजाई",
+   "vo_g5_chor_hint2": "चोर",
    "vo_g5_correct": "शाबाश! सही वाक्य है- जंगल में नाच रहा था मोर, तभी वहाँ आया एक चोर।",
    "vo_g5_correct_tmp": "शाबाश! जंगल में नाच रहा था मोर, तभी वहाँ आया एक चोर।",
+   "vo_g5_hathi_hint2": "हाथी",
    "vo_g5_hint1": "शब्दों को बोलकर देखिए। मोर से मिलती हुई आवाज़ वाला शब्द पहचानिए।",
    "vo_g5_hint2": "चोर, शेर, हाथी।",
    "vo_g5_hint3": "मोर और चोर दोनों तुकांत शब्द हैं। चोर शब्द पर टैप कीजिए।",
    "vo_g5_prompt": "अब इस वाक्य को सही तुकांत शब्द चुनकर पूरा कीजिए। जंगल में नाच रहा था मोर। तभी वहाँ आया एक, खाली जगह।",
+   "vo_g5_sher_hint2": "शेर",
    "vo_g6_correct": "शाबाश! सही वाक्य है- बंदर खा रहा था केला, पास ही लगा था एक मेला।",
    "vo_g6_correct_tmp": "शाबाश! बंदर खा रहा था केला, पास ही लगा था एक मेला।",
    "vo_g6_hint1": "शब्दों को बोलकर देखिए। केला से मिलती हुई आवाज़ वाला शब्द पहचानिए।",
    "vo_g6_hint2": "मेला, पेड़, फूल।",
    "vo_g6_hint3": "केला और मेला दोनों तुकांत शब्द हैं। मेला शब्द पर टैप कीजिए।",
+   "vo_g6_mela_hint2": "मेला",
+   "vo_g6_ped_hint2": "पेड़",
+   "vo_g6_phool_hint2": "फूल",
    "vo_g6_prompt": "तुकांत शब्द चुनकर वाक्य पूरा कीजिए। बंदर खा रहा था केला। पास ही लगा था एक, खाली जगह।",
    "vo_l1": "हलवाई ने आग सुलगाई।",
    "vo_l2": "फिर चूल्हे पर धरी कढ़ाई।",
@@ -729,6 +753,17 @@
     ],
     "d": 5356
    },
+   "vo_g2_chulha_hint2": {
+    "s": 280,
+    "e": 782,
+    "segs": [
+     [
+      280,
+      782
+     ]
+    ],
+    "d": 1164
+   },
    "vo_g2_hint1": {
     "s": 280,
     "e": 5264,
@@ -781,6 +816,28 @@
      ]
     ],
     "d": 6394
+   },
+   "vo_g2_jalebi_hint2": {
+    "s": 280,
+    "e": 876,
+    "segs": [
+     [
+      280,
+      876
+     ]
+    ],
+    "d": 1259
+   },
+   "vo_g2_nachai_hint2": {
+    "s": 280,
+    "e": 912,
+    "segs": [
+     [
+      280,
+      912
+     ]
+    ],
+    "d": 1295
    },
    "vo_g2_prompt": {
     "s": 280,
@@ -926,6 +983,28 @@
     ],
     "d": 6147
    },
+   "vo_g4_jalebi_hint2": {
+    "s": 280,
+    "e": 956,
+    "segs": [
+     [
+      280,
+      956
+     ]
+    ],
+    "d": 1342
+   },
+   "vo_g4_paise_hint2": {
+    "s": 280,
+    "e": 688,
+    "segs": [
+     [
+      280,
+      688
+     ]
+    ],
+    "d": 1065
+   },
    "vo_g4_prompt": {
     "s": 281,
     "e": 2962,
@@ -940,6 +1019,28 @@
      ]
     ],
     "d": 3339
+   },
+   "vo_g4_rajai_hint2": {
+    "s": 282,
+    "e": 829,
+    "segs": [
+     [
+      282,
+      829
+     ]
+    ],
+    "d": 1230
+   },
+   "vo_g5_chor_hint2": {
+    "s": 280,
+    "e": 623,
+    "segs": [
+     [
+      280,
+      623
+     ]
+    ],
+    "d": 1070
    },
    "vo_g5_correct": {
     "s": 280,
@@ -986,6 +1087,17 @@
      ]
     ],
     "d": 6116
+   },
+   "vo_g5_hathi_hint2": {
+    "s": 280,
+    "e": 734,
+    "segs": [
+     [
+      280,
+      734
+     ]
+    ],
+    "d": 1112
    },
    "vo_g5_hint1": {
     "s": 280,
@@ -1058,6 +1170,17 @@
      ]
     ],
     "d": 10792
+   },
+   "vo_g5_sher_hint2": {
+    "s": 280,
+    "e": 686,
+    "segs": [
+     [
+      280,
+      686
+     ]
+    ],
+    "d": 1073
    },
    "vo_g6_correct": {
     "s": 280,
@@ -1165,6 +1288,39 @@
      ]
     ],
     "d": 6146
+   },
+   "vo_g6_mela_hint2": {
+    "s": 280,
+    "e": 728,
+    "segs": [
+     [
+      280,
+      728
+     ]
+    ],
+    "d": 1120
+   },
+   "vo_g6_ped_hint2": {
+    "s": 285,
+    "e": 667,
+    "segs": [
+     [
+      285,
+      667
+     ]
+    ],
+    "d": 1046
+   },
+   "vo_g6_phool_hint2": {
+    "s": 280,
+    "e": 682,
+    "segs": [
+     [
+      280,
+      682
+     ]
+    ],
+    "d": 1057
    },
    "vo_g6_prompt": {
     "s": 280,
@@ -1378,15 +1534,15 @@
     "d": 1303
    },
    "vo_o_chulha": {
-    "s": 279,
-    "e": 801,
+    "s": 280,
+    "e": 834,
     "segs": [
      [
-      279,
-      801
+      280,
+      834
      ]
     ],
-    "d": 1187
+    "d": 1218
    },
    "vo_o_halwai": {
     "s": 280,
@@ -1423,14 +1579,14 @@
    },
    "vo_o_mithai": {
     "s": 280,
-    "e": 976,
+    "e": 857,
     "segs": [
      [
       280,
-      976
+      857
      ]
     ],
-    "d": 1354
+    "d": 1243
    },
    "vo_o_paise": {
     "s": 377,
@@ -2758,7 +2914,7 @@
         },
         {
          "t": "नचाई,",
-         "rhyme": false,
+         "rhyme": true,
          "audio": "vo_pw_16"
         },
         {
@@ -3046,15 +3202,18 @@
      {
       "word": "नचाई",
       "audio": "vo_pw_16",
-      "correct": true
+      "correct": true,
+      "hint2": "vo_g2_nachai_hint2"
      },
      {
       "word": "चूल्हा",
-      "audio": "vo_o_chulha"
+      "audio": "vo_o_chulha",
+      "hint2": "vo_g2_chulha_hint2"
      },
      {
       "word": "जलेबी",
-      "audio": "vo_pw_11"
+      "audio": "vo_pw_11",
+      "hint2": "vo_g2_jalebi_hint2"
      }
     ]
    }
@@ -3115,15 +3274,18 @@
      {
       "word": "रजाई",
       "audio": "vo_o_rajai",
-      "correct": true
+      "correct": true,
+      "hint2": "vo_g4_rajai_hint2"
      },
      {
       "word": "पैसे",
-      "audio": "vo_pw_20"
+      "audio": "vo_pw_20",
+      "hint2": "vo_g4_paise_hint2"
      },
      {
       "word": "जलेबी",
-      "audio": "vo_pw_11"
+      "audio": "vo_pw_11",
+      "hint2": "vo_g4_jalebi_hint2"
      }
     ]
    }
@@ -3153,17 +3315,20 @@
       "word": "चोर",
       "audio": "vo_word_0",
       "correct": true,
-      "img": "assets/images/chor.webp"
+      "img": "assets/images/chor.webp",
+      "hint2": "vo_g5_chor_hint2"
      },
      {
       "word": "शेर",
       "audio": "vo_word_1",
-      "img": "assets/images/sher_clear.webp"
+      "img": "assets/images/sher_clear.webp",
+      "hint2": "vo_g5_sher_hint2"
      },
      {
       "word": "हाथी",
       "audio": "vo_word_2",
-      "img": "assets/images/hathi_clear.webp"
+      "img": "assets/images/hathi_clear.webp",
+      "hint2": "vo_g5_hathi_hint2"
      }
     ]
    }
@@ -3193,17 +3358,20 @@
       "word": "मेला",
       "audio": "vo_word_4",
       "correct": true,
-      "img": "assets/images/mela_clear.webp"
+      "img": "assets/images/mela_clear.webp",
+      "hint2": "vo_g6_mela_hint2"
      },
      {
       "word": "पेड़",
       "audio": "vo_word_5",
-      "img": "assets/images/ped_clear.webp"
+      "img": "assets/images/ped_clear.webp",
+      "hint2": "vo_g6_ped_hint2"
      },
      {
       "word": "फूल",
       "audio": "vo_word_6",
-      "img": "assets/images/phool_clear.webp"
+      "img": "assets/images/phool_clear.webp",
+      "hint2": "vo_g6_phool_hint2"
      }
     ]
    }
@@ -3566,6 +3734,6 @@
 
 <!-- ============ ENGINE ============ -->
 <script src="swiftpal-bridge.js"></script>   <!-- [QA 01] host bridge: Android / iOS / web - must load before app.js -->
-<script src="app.js?v=20261110o"></script>
+<script src="app.js?v=20261111a"></script>
 </body>
 </html>

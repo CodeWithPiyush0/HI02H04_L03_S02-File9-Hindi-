@@ -77,6 +77,11 @@ Status vocabulary: ✅ DONE · ⚑ FLAGGED-BACK · ⏳ PENDING · N/C (deck slid
 ## New VO (Gemini TTS "Kore", tools/build_vo.py — EAR-CHECK before delivery)
 `vo_mic_intro`, `vo_pt_guided`, `vo_g5_prompt`, `vo_yes`, `vo_no`, `vo_cel`. Every other clip is v1's recording, unchanged.
 
+## User 2026-11-11
+- **Hint 2, one clip per card.** 12 new clips `vo_<g2|g4|g5|g6>_<word>_hint2` (and new takes of `vo_o_mithai` / `vo_o_chulha` for G3): on the 2nd wrong answer each option (G3: each picture) is said from its own clip, left to right, lit orange while it is said - as the ring toss does. The one-clip `vo_gN_hint2` lines are no longer heard (kept only as a fallback for a page without per-card clips). Card: `options[].hint2`.
+- **Page 1** - the poem lines 6px bigger (28 → 34px; pages 2-6 stay 28px).
+- **Page 7** - "आँख नचाई, लार टपकाई।": नचाई is now a rhyme word in the poem (it lights orange like the others; the board already had नचाई).
+
 ## Story credit (user 2026-11-10)
 Page 1 shows the StoryWeaver credit "कहानी: जलेबी | लेखक: मधु बी. जोशी | चित्रांकन: अजीत नारायण | © Pratham Education Foundation, 2020 (StoryWeaver) | CC BY 4.0 | HTML गतिविधि हेतु रूपांतरित।" (the card's `credits`), written as HI02H04_L03_S01 (Alu-Malu-Kalu) writes its own: one small grey line (12px / 600, #5B6B85) below the main card, outside it - 12px under its blue border, lined up with its outer left edge; first page only.
 
