@@ -1075,8 +1075,9 @@ function jlPick(C, parent, cfg){
       try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: true, attempt: wrong + 1, score: wrong === 0 ? 1 : 0 }); }catch(e){}
       GameBus.emit(cfg.signal || "rhyme_pick_correct", { slide_id: cfg.key || slide.id, phase: slide.phase, value: wrong === 0, first_try: wrong === 0, attempts: wrong + 1, latency_ms: Date.now() - state.slideStart });
       sfxCorrect(); try{ confettiCannon(); }catch(e){} setSwMood("happy");
-      if(cfg.onRight) await cfg.onRight(b, b._o);
-      await C.sayId(b._o.audio);
+      /* onRight resolves true when it has said the word itself (the sentence pages: as it lands in the blank) */
+      const said = cfg.onRight ? await cfg.onRight(b, b._o) : false;
+      if(!said) await C.sayId(b._o.audio);
       await C.wait(500);
       res(wrong);
     }
@@ -1130,7 +1131,8 @@ const JL_WORD_MS = 1100;   // the reference's WORD_MS: while the child reads, ev
 function jlWordSchedule(words, tm){
   const wt = w => Math.max(1, Array.from((w.textContent || "").replace(/[“”"‘’,।!?;:—-]/g, "")).length);
   const phrases = []; let cur = [];
-  words.forEach((w, i)=>{ cur.push(i); if(/[,।!?;:”"]$/.test((w.textContent || "").trim()) || i === words.length - 1){ phrases.push(cur); cur = []; } });
+  /* a dash closes a phrase too ("सही वाक्य है- ..." - user 2026-11-11: the sentence lit behind the voice on pages 14, 15) */
+  words.forEach((w, i)=>{ cur.push(i); if(/[,।!?;:”"—-]$/.test((w.textContent || "").trim()) || i === words.length - 1){ phrases.push(cur); cur = []; } });
   let segs = (tm.segs || [[tm.s, tm.e]]).map(x => x.slice());
   while(segs.length > phrases.length && segs.length > 1){
     let k = 0, best = Infinity;
@@ -1221,8 +1223,7 @@ const JalebiModules = {
       const wrap = JK.add(host, "div", "jl-read");
       const pic = JK.add(wrap, "div", "jl-read-pic");
       const im = JK.add(pic, "img", "jl-read-img"); im.src = d.image; im.alt = "";
-      const cap = JK.add(wrap, "div", "jl-read-cap" + (d.lines.length > 1 ? " wrap" : "") +
-        (CARD.slides[0] && CARD.slides[0].id === slide.id ? " first" : ""));    // page 1: its lines 6px bigger (user 2026-11-11)
+      const cap = JK.add(wrap, "div", "jl-read-cap" + (d.lines.length > 1 ? " wrap" : ""));
       /* the lines in one block, centred in the box, each line starting at the block's left edge (SME 2026-11-09: "दोनों लाइन
          के पहले शब्द एक ही जगह से शुरू करने हैं") */
       const linesBox = JK.add(cap, "div", "jl-read-lines");
@@ -1495,7 +1496,9 @@ const JalebiModules = {
           l.split(/\s+/).filter(Boolean).forEach((t, i)=>{ if(i) p.appendChild(document.createTextNode(" "));
             if(t.indexOf("____") >= 0){ blank = JK.add(p, "span", "jl-blank"); blank._say = "खाली"; sentWords.push(blank);
               const rest = t.replace("____", ""); if(rest) p.appendChild(document.createTextNode(rest)); }
-            else { const w = JK.add(p, "span", "jl-sw"); w.textContent = t; w._say = t; sentWords.push(w); } }); }); }
+            else { const w = JK.add(p, "span", "jl-sw"); w.textContent = t; w._say = t; sentWords.push(w);
+              /* the rhyme partner in the given line, orange (user 2026-11-11: मोर on page 14, केला on page 15) */
+              if(d.highlight && t.replace(/[।,!?;:“”"'—-]/g, "") === d.highlight) w.classList.add("jl-rhyme"); } }); }); }
       else { const t = jlQPic(JK.add(wrap, "div", "jl-qpics"), d.target); t.onclick = ()=>{ if(!isPlaying && C.alive() && !state.locked){ PVSFX.tap(); C.sayId(d.target.audio).catch(()=>{}); } }; }
       JK.speaker(C);
       JK.run(C, async ()=>{
@@ -1519,11 +1522,17 @@ const JalebiModules = {
             b.style.transition ="translate .6s cubic-bezier(.3,.8,.3,1), scale .6s cubic-bezier(.3,.8,.3,1), opacity .25s ease .42s";
             b.style.translate = ((z.left + z.width / 2 - fr.left - fr.width / 2) / k) + "px " + ((z.top + z.height / 2 - fr.top - fr.height / 2) / k) + "px";
             b.style.scale = ".3"; b.style.opacity = "0";
-            await C.wait(620); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden";
+            /* user 2026-11-11: the word is said as it lands in the blank - its clip starts its lead-in silence early, so
+               the voice and the word arrive together, and it plays on while the sentence moves (no wait after the move) */
+            const tm = (CARD.assets.audio_timing || {})[b._o.audio], lead = Math.min(400, tm ? tm.s : 0);
+            await C.wait(620 - lead);
+            const word = C.sayId(b._o.audio);
+            await C.wait(lead); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden";
             const sent = wrap.querySelector(".jl-sentence"), s = sent.getBoundingClientRect(), w = wrap.getBoundingClientRect();
             sent.style.transition = "translate .55s cubic-bezier(.3,.8,.3,1)";
             sent.style.translate = "0 " + ((w.top + w.height / 2 - s.top - s.height / 2) / k) + "px";
-            await C.wait(560); },
+            await Promise.all([word, C.wait(560)]);
+            return true; },
           onReady: M =>{
             /* the sentence read: each of its words lit as it is said (found in the line in order, after the instruction) */
             const f = sentWords.length ? jlWordFracs(slide.audio.prompt, sentWords.map(w => w._say), false) : [];

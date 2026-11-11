@@ -2409,9 +2409,8 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-read-img{display:block;width:100%;height:100%;object-fit:cover;}
 .jl-read-cap{position:absolute;left:311px;top:305px;width:491px;min-height:92px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:10px 20px;border:4px solid #FFFFFF;border-radius:20.83px;background:#FFFFFF;box-shadow:0 5px 0 rgba(11,42,90,.10),0 10px 26px rgba(11,42,90,.12);
-  font-family:var(--font-hi);font-size:28px;font-weight:700;line-height:1.4;word-spacing:.25em;color:#0B3D8C;text-align:center;white-space:nowrap;pointer-events:auto;}
-.jl-read-cap.wrap{line-height:1.45;padding:10px 18px;}
-.jl-read-cap.first{font-size:34px;}                                                /* page 1: the poem lines 6px bigger (user 2026-11-11) */
+  font-family:var(--font-hi);font-size:34px;font-weight:700;line-height:1.4;word-spacing:.25em;color:#0B3D8C;text-align:center;white-space:nowrap;pointer-events:auto;}
+.jl-read-cap.wrap{line-height:1.45;padding:10px 18px;}                             /* 34px on pages 1-6 (user 2026-11-11: was 28, page 1 first) */
 .jl-read-cap .jl-line{font:inherit;line-height:inherit;color:inherit;white-space:nowrap;}
 /* the story credit (page 1): HI02H04_L03_S01's .story-credit - 12px / 600, #5B6B85, one line, BELOW the main card (outside
    it): its top 12px under the card's blue border, lined up with the card's outer left edge (the border is 10px) */
@@ -2638,6 +2637,7 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 /* pages 14-15: the sentence read with the voice - each word lit (the poem pages' karaoke: #FF8A00 x1.1), the blank too */
 .jl-sw{display:inline-block;margin:0 3px;transition:color .15s ease,transform .15s ease;}
 .jl-sw.now{color:#FF8A00;transform:scale(1.10);}
+.jl-sw.jl-rhyme{color:#F28C28;}                                                   /* मोर / केला - as the poem's rhyme words (user 2026-11-11) */
 .jl-blank{transition:border-color .15s ease,background .15s ease;}
 .jl-blank.now{border-bottom-color:#FF8A00;background:rgba(255,138,0,.12);}
 

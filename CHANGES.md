@@ -79,7 +79,10 @@ Status vocabulary: ✅ DONE · ⚑ FLAGGED-BACK · ⏳ PENDING · N/C (deck slid
 
 ## User 2026-11-11
 - **Hint 2, one clip per card.** 12 new clips `vo_<g2|g4|g5|g6>_<word>_hint2` (and new takes of `vo_o_mithai` / `vo_o_chulha` for G3): on the 2nd wrong answer each option (G3: each picture) is said from its own clip, left to right, lit orange while it is said - as the ring toss does. The one-clip `vo_gN_hint2` lines are no longer heard (kept only as a fallback for a page without per-card clips). Card: `options[].hint2`.
-- **Page 1** - the poem lines 6px bigger (28 → 34px; pages 2-6 stay 28px).
+- **Pages 1-6** - the poem lines 6px bigger (28 → 34px), all six pages alike (page 1 first, then pages 2-6 to match). The longest line (page 3) is 429 of the box's 443px.
+- **Pages 14, 15** - मोर / केला, the rhyme partner in the sentence's first line, is orange like the poem's rhyme words (card: `data.highlight`).
+- **Pages 14, 15** - the sentence read after the right answer now lights each word with the voice. "सही वाक्य है-" ends in a dash, which the karaoke didn't treat as a phrase end, so "शाबाश!" and "सही वाक्य है" were merged into one stretch and the first line lit late, squeezed behind the voice. A dash now ends a phrase (only these two clips have one).
+- **Pages 14, 15** - the right word is said as it lands in the blank (its clip starts its 0.28 s lead-in early, so voice and word arrive together; checked: within 30 ms). Before, it was said only after the sentence had moved to the middle - about 0.8 s after it landed.
 - **Page 7** - "आँख नचाई, लार टपकाई।": नचाई is now a rhyme word in the poem (it lights orange like the others; the board already had नचाई).
 
 ## Story credit (user 2026-11-10)

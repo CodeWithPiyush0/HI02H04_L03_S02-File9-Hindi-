@@ -3179,7 +3179,8 @@
       "img": "assets/images/hathi_clear.webp",
       "hint2": "vo_g5_hathi_hint2"
      }
-    ]
+    ],
+    "highlight": "मोर"
    }
   },
   {
@@ -3222,7 +3223,8 @@
       "img": "assets/images/phool_clear.webp",
       "hint2": "vo_g6_phool_hint2"
      }
-    ]
+    ],
+    "highlight": "केला"
    }
   },
   {
