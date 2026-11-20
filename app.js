@@ -260,6 +260,12 @@ function setPlaying(on){
   // tut frame, so the in-card .tut-audio is the only visible affordance and must react to VO too).
   isPlaying=on;
   document.body.classList.toggle("vo-busy", !!on);   // user 2026-10-26: while a voice line plays nothing on the page takes a tap (style.css)
+  /* lead review 2026-11-20 (File6 MTG2A01_L04_S01's speaker logic, from File4): every speaker - the cover's, the header chip, the
+     teaching card's - is greyed and takes no tap while a voice plays (body.spk-busy), and stays so 0.7s after it stops, so it
+     never flashes blue in the short gap between two lines of one sequence */
+  clearTimeout(setPlaying._spkT);
+  if(on) document.body.classList.add("spk-busy");
+  else setPlaying._spkT = setTimeout(()=>{ if(!isPlaying) document.body.classList.remove("spk-busy"); }, 700);
   bgmDuck();
   /* [QA 05] only the chip the audio is actually coming FROM animates, and only one at a time.
      It used to pulse every chip for every sound - option words, feedback, the count-aloud. */
@@ -943,11 +949,15 @@ const JK = (function(){
     };
     return C;
   }
-  const run = (C, fn)=>{ C.seq = true;
+  const run = (C, fn)=>{ C.seq = true; C.ran = true;
     return fn().catch(e =>{ if(e !== C.STOP) console.error("[jalebi]", e); }).finally(()=>{ C.seq = false; }); };
   /* [QA BUG_09 / 04 / 07, as File6 pvReplay] the page's speaker takes a tap only while the page WAITS FOR THE CHILD (or
      its flow has ended) - never while the page talks, never once it is answered. replay: what a tap says. */
   function speaker(C, replay){
+    /* (File6, lead review 2026-11-20: the page is "talking" from its first frame - its speaker never blinks blue before its
+       first line. Every page sets its speaker before its JK.run, which clears it when its flow ends; a page whose flow waits
+       for the child - page 1's mic - is live through its waiter) */
+    if(!C.ran) C.seq = true;
     state.replayAudio = ()=>{ if(isPlaying || !C.alive()) return;
       if(replay) run(C, replay); else if(C.cur) C.say(C.cur).catch(()=>{}); };
     const sync = ()=>{ if(!C.alive()) return false;
@@ -1125,6 +1135,8 @@ function jlSayWithGlow(C, role, items){
 const JL_MIC_PNG = "data:image/png;base64,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";
 const JL_READ_MIC = '<svg viewBox="0 0 58 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="mic"><rect x="8" y="4" width="41.1559" height="44" rx="20.578" fill="url(#jlMicGrad)"/><rect x="6" y="2" width="45.1559" height="48" rx="22.578" stroke="white" stroke-width="4"/><g transform="translate(28.58 26) scale(1.3) translate(-28.58 -26)"><g mask="url(#jlMicMask)"><rect x="17.9111" y="15.3335" width="21.434" height="21.434" fill="#0B3D8C"/></g></g></g><g class="mic-wave"><rect x="8" y="4" width="41.1559" height="44" rx="20.578" fill="url(#jlMicGrad)"/><rect x="6" y="2" width="45.1559" height="48" rx="22.578" stroke="white" stroke-width="4"/><g fill="#0B3D8C" transform="translate(-2.42 0)"><rect x="22.9" y="22" width="2.2" height="8" rx="1.1"/><rect x="26.4" y="19" width="2.2" height="14" rx="1.1"/><rect x="29.9" y="17" width="2.2" height="18" rx="1.1"/><rect x="33.4" y="19" width="2.2" height="14" rx="1.1"/><rect x="36.9" y="22" width="2.2" height="8" rx="1.1"/></g></g><defs><linearGradient id="jlMicGrad" x1="0" y1="4" x2="0" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD24E"/><stop offset=".55" stop-color="#FCB717"/><stop offset="1" stop-color="#F2A80F"/></linearGradient><mask id="jlMicMask" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="20" y="18" width="17" height="16"><image href="' + JL_MIC_PNG + '" x="20.5781" y="18" width="16" height="16" preserveAspectRatio="none"/></mask></defs></svg>';
 const JL_WORD_MS = 1100;   // the reference's WORD_MS: while the child reads, every word stays lit this long
+const JL_STAR_SVG = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5.1 10.6 11.6 1.6-8.4 8.1 2 11.5L20 29.3 9.7 34.8l2-11.5-8.4-8.1 11.6-1.6z"/></svg>';   // page 10's progress stars
+const JL_HEAD_MS = 700;    // pages 8, 9: each word of the title lit this long as it comes in after the line (lead review 2026-11-20)
 /* the reference's wordScheduleFor: per-word [start, end) ms that follows the voice - the words cut into phrases at their
    punctuation, the recording's spoken stretches merged across their shortest pauses to one per phrase, and inside a
    stretch the words share its time by length */
@@ -1383,16 +1395,45 @@ const JalebiModules = {
       const endOn = (e, on)=>{ if(!e) return; e.classList.toggle("on", on); if(on) JK.pop(e); };
       [[A, d.a], [B, d.b]].forEach(([c, w])=> c.onclick = ()=>{ if(!open || isPlaying || !C.alive()) return; PVSFX.tap();
         c.classList.add("lit"); C.sayId(w.audio).then(()=> c.classList.remove("lit"), ()=>{}); });
+      /* lead review 2026-11-20: the title ("कढ़ाई-मिठाई, तुकांत शब्द हैं।") is not there from the start - the pictures come
+         first, Swifty says the line, and as it says "... इसलिए यह तुकांत शब्द हैं।" the title comes in, its words lit with the
+         voice as page 1's lines are (orange, 1.1x) */
+      const head = host.closest(".tut-card") && host.closest(".tut-card").querySelector(".tut-prompt");
+      let headWords = [];
+      if(head){ const text = head.textContent.trim(); head.textContent = "";
+        const line = JK.add(head, "span", "jl-head-line");   // (one inline box: the heading is a flex box, which drops the spaces between its children)
+        text.split(/\s+/).forEach((t, i)=>{ if(i) line.appendChild(document.createTextNode(" ")); const w = JK.add(line, "span", "jl-w"); w.textContent = t; headWords.push(w); });
+        head.classList.add("jl-head-wait"); }
+      const showHead = async ()=>{
+        if(!head || !headWords.length) return;
+        if(head.classList.contains("jl-head-wait")){ head.classList.remove("jl-head-wait"); head.classList.add("jl-head-in"); await C.wait(JK.reduce() ? 0 : 450); }
+        const ms = headWords.length * JL_HEAD_MS, stop = jlKaraoke(headWords, ms);
+        try{ await C.wait(ms + 150); } finally{ stop(); }
+      };
+      [A, B].forEach((c, i)=>{ c.classList.add("jl-meet-in"); c.style.animationDelay = (i * 140) + "ms"; });   // the pictures first
+      let first = true;   // (the first time: a beat longer, so the pictures have landed before Swifty speaks)
       const all = async ()=>{
-        open = false; ends.forEach(e => endOn(e, false)); await C.wait(300); setSwMood("talk");
+        open = false; ends.forEach(e => endOn(e, false)); await C.wait(first ? 800 : 300); first = false; setSwMood("talk");
         const lit = (c, on)=> c.classList.toggle("lit", on);
         /* where the two words (and "आई") are said - measured from the clip; the lesson's estimate if not */
         const f = jlWordFracs(slide.audio.prompt, d.ending ? [d.a.word, d.b.word, "आई"] : [d.a.word, d.b.word], false);
         const fa = f[0] != null ? f[0] : CU.a, fb = f[1] != null ? f[1] : CU.b;
-        await C.say("prompt", [[fa, ()=>{ lit(A, true); endOn(ends[0], true); }], [fb, ()=>{ lit(A, false); lit(B, true); endOn(ends[1], true); }],
-                               [fb != null ? fb + .12 : CU.b_end, ()=> lit(B, false)],
-                               [d.ending ? f[2] : null, ()=> ends.forEach(e => endOn(e, true))]]);
-        lit(A, false); lit(B, false); open = true; setSwMood("point"); setNavActive(true);
+        /* the title with the voice (user 2026-11-20): it comes in as Swifty starts "इसलिए यह ...", and each of its words lights
+           as it is said - data.head, measured on the recording (ms): at (in), words[i] (word i lit), end (all off). The first
+           word ("कढ़ाई-मिठाई,") goes with "इसलिए यह". A page without it: the title after the line (showHead). */
+        const H = d.head, D = ((CARD.assets.audio_timing || {})[slide.audio.prompt] || {}).d;
+        const synced = !!(H && D && head && headWords.length === H.words.length);
+        const headOn = i => headWords.forEach((w, j)=> w.classList.toggle("now", j === i));
+        const headCues = !synced ? [] : [[H.at / D, ()=>{ if(head.classList.contains("jl-head-wait")){ head.classList.remove("jl-head-wait"); head.classList.add("jl-head-in"); } }]]
+          .concat(H.words.map((ms, i)=> [ms / D, ()=> headOn(i)]), [[H.end / D, ()=> headOn(-1)]]);
+        try{
+          await C.say("prompt", [[fa, ()=>{ lit(A, true); endOn(ends[0], true); }], [fb, ()=>{ lit(A, false); lit(B, true); endOn(ends[1], true); }],
+                                 [fb != null ? fb + .12 : CU.b_end, ()=> lit(B, false)],
+                                 [d.ending ? f[2] : null, ()=> ends.forEach(e => endOn(e, true))]].concat(headCues));
+        } finally { if(synced) headOn(-1); }
+        lit(A, false); lit(B, false); setSwMood("point");
+        if(synced) head.classList.remove("jl-head-wait"); else await showHead();
+        open = true; setNavActive(true);
       };
       JK.speaker(C, all);
       JK.run(C, all);
@@ -1401,7 +1442,7 @@ const JalebiModules = {
 
   FIND_RHYME: {
     /* deck page 13 (guided): the poem's first four lines, no picture; "आई की आवाज़ वाले शब्द पहचानिए।" - every word says
-       itself when tapped. An आई word turns green, gets its number and counts on the 0/6 over the poem (SME 2026-11-09); a
+       itself when tapped. An आई word turns green and sends a star to the progress track over the poem (lead review 2026-11-20; was a number + 0/6); a
        wrong word is said and wiggles (help 1). After two incorrect attempts, hint 2 is spoken and the hand guides each
        next आई word, with all other words disabled for that answer only. Finding it restores free choice and resets
        the incorrect-attempt streak. All found: confetti, "शाबाश! आपने सभी तुकांत शब्द पहचान लिए।". 7s idle: the instruction again.
@@ -1410,14 +1451,36 @@ const JalebiModules = {
       const d = slide.data, C = JK.ctx(slide, host);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
       const wrap = JK.add(host, "div", "jl-find");
-      /* the counter over the poem, and a number on each word as it is found (SME 2026-11-09: "ऊपर 0/6 ... हर शब्द के साथ
-         number आएगा" - it brings back the counter taken off on 2026-11-03) */
-      const count = JK.add(wrap, "div", "jl-count jl-find-count");
+      /* the progress over the poem (lead review 2026-11-20: no 0/6, no numbers on the words): one grey star per word to find
+         on a track; each word found sends a gold star to the next one, which fills with a sparkle, and the track fills up to it */
+      const bar = JK.add(wrap, "div", "jl-stars");
+      const fill = JK.add(bar, "i", "jl-stars-fill");
       const poem = JK.add(wrap, "div", "jl-poem");
       const rows = d.lines.map(l => jlLine(poem, l, "chip"));
       const chips = rows.flatMap(r => r._w);
       chips.forEach(s => s.setAttribute("role", "button"));
       const targets = chips.filter(s => s._w.rhyme);
+      const stars = targets.map(()=> JK.add(bar, "span", "jl-star", JL_STAR_SVG));
+      /* a gold star flies from the word to its place on the track, then the place fills: pop, glow, a sparkle burst */
+      const earnStar = (from, n)=>{
+        const slot = stars[n - 1]; if(!slot) return Promise.resolve();
+        const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+        const w = wrap.getBoundingClientRect(), a = from.getBoundingClientRect(), b = slot.getBoundingClientRect();
+        const at = r => [(r.left - w.left + r.width / 2) / k - 22, (r.top - w.top + r.height / 2) / k - 22];
+        const [x0, y0] = at(a), [x1, y1] = at(b);
+        const fly = JK.add(wrap, "div", "jl-star-fly", JL_STAR_SVG);
+        const land = ()=>{ fly.remove(); if(!C.alive()) return;
+          slot.classList.add("on"); fill.style.width = (n / stars.length * 100) + "%";
+          const burst = JK.add(slot, "i", "jl-star-burst"); setTimeout(()=> burst.remove(), 900);
+          playSfxFile("sfx_star_pop_new", 0.7, ()=> PVSFX.appear()); };
+        if(JK.reduce()){ land(); return Promise.resolve(); }
+        const an = fly.animate([{ left: x0 + "px", top: y0 + "px", scale: .6, rotate: "0deg" },
+                                { left: (x0 + (x1 - x0) * .7) + "px", top: (y1 + (y0 - y1) * .3) + "px", scale: 1.35, rotate: "160deg" },   // (a curve that stays under the track - above it the header band clips it)
+                                { left: x1 + "px", top: y1 + "px", scale: 1, rotate: "360deg" }],
+                               { duration: 750, easing: "cubic-bezier(.45,.05,.4,1)", fill: "both" });
+        return new Promise(r =>{ an.onfinish = ()=>{ land(); r(); }; an.oncancel = ()=>{ fly.remove(); r(); }; });
+      };
+      let starFlight = Promise.resolve();
       let found = 0, wrong = 0, streak = 0, busy = true, over = false, assisted = false;
       const guideNext = ()=>{
         const next = targets.find(word => !word.classList.contains("found"));
@@ -1429,7 +1492,7 @@ const JalebiModules = {
         });
         if(next){ next.classList.add("hint-on"); JK.softGlow(next); placeNudge(next); }
       };
-      const paint = ()=>{ count.textContent = found + "/" + targets.length; };
+      const paint = ()=>{ bar.setAttribute("aria-label", found + " / " + targets.length); };
       paint();
       const W = { live: ()=> !over, busy: ()=> busy }; C.waits.push(W);
       const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await C.say("prompt"); busy = false; });
@@ -1439,9 +1502,10 @@ const JalebiModules = {
         JK.run(C, async ()=>{
           if(s._w.rhyme){
             if(!s.classList.contains("found")){ s.classList.add("found"); s.classList.remove("hint-on"); stopNudge(); JK.pop(s); found++; streak = 0; paint(); sfxCorrect();
-              JK.add(s, "b", "jl-find-num").textContent = found; JK.pop(count); }
+              starFlight = earnStar(s, found); }
             await C.sayId(s._w.audio);
             if(found === targets.length){
+              await starFlight;                                  // (the sixth star in place before the celebration)
               over = true; state.locked = true; recordResult(slide, wrong === 0);
               try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: true, attempt: wrong + 1, score: wrong === 0 ? 1 : 0 }); }catch(e){}
               GameBus.emit("rhyme_find_done", { slide_id: slide.id, phase: slide.phase, value: wrong === 0, first_try: wrong === 0, wrong_taps: wrong });
@@ -2757,6 +2821,7 @@ function boot(){
     b.setAttribute("aria-disabled", ready ? "false" : "true");
     if(img) img.src = ready ? "assets/btn-play-round.svg" : "assets/btn-play-round-waiting.svg";   // HI02H11_L01_S01's round play button (review 2026-10-06)
     if(!ready){ disarmStartPulse(); b.classList.remove("sg-pop"); return; }
+    b.classList.add("sg-shown");   // (File6, lead review 2026-11-20: once it has been shown it stays on screen - a replay greys it)
     if(!was){ b.classList.remove("sg-pop"); void b.offsetWidth; b.classList.add("sg-pop");
       setTimeout(()=> b.classList.remove("sg-pop"), 900); }
     armStartPulse();
@@ -2777,6 +2842,9 @@ function boot(){
     /* review 2026-10-05: "why is the sound box getting disabled - this should not happen anywhere in the game": the
        speaker is never greyed out (the QA checklist's disabled-while-the-greeting-speaks state is gone). A tap while the
        greeting is still playing is ignored, as on every speaker (replayTap), so it never restarts the line mid-way. */
+    /* File6 (lead review 2026-11-20): a replay of the greeting from the speaker turns the play button into the grey disabled
+       disc (it stays on screen) until the line ends; then it is live again, popping and pulsing */
+    if(_greetingHeard) setStartBtnReady(false);
     play(landSrc, ()=>{ if(voEl.ended){ _greetingHeard = true; releaseStart(); } });
   };
   // any tap on the landing restarts the 5s idle timer (only once the button is live)

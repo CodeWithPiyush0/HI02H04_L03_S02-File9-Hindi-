@@ -2614,13 +2614,10 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 .jl-opts.ref .jl-opt:active{box-shadow:0 3px 0 #D3D4D8;translate:0 4px;}
 .jl-opts.ref .jl-opt.correct{border:4px solid #00B132;background:#EFFBF2;box-shadow:0 7px 0 #A8E3B9,0 0 14px rgba(0,177,50,.4);}
 .jl-opts.ref .jl-opt.hint-on{border-color:#00B132;box-shadow:0 7px 0 #D3D4D8,0 0 0 6px rgba(0,177,50,.28);}
-/* page 10 (G1): the poem box bigger, so it fills the page (user 2026-11-03); the 0/6 counter over it and a number on each
-   word found (SME 2026-11-09) */
-.jl-find{flex:1;justify-content:center;}
-.jl-find-count{font-size:30px;padding:4px 26px;margin-bottom:-2px;}
+/* page 10 (G1): the poem box bigger, so it fills the page (user 2026-11-03); over it the star track (lead review 2026-11-20 -
+   it replaces the 0/6 counter and the numbers on the words, SME 2026-11-09) - see "page 10's star track" at the end */
+.jl-find{position:relative;flex:1;justify-content:center;}
 .jl-line.chip .jl-w{position:relative;}
-.jl-find-num{position:absolute;right:-10px;top:-12px;min-width:30px;height:30px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#00B132;
-  border:2.5px solid #FFFFFF;box-shadow:0 2px 4px rgba(0,60,20,.3);font-family:var(--font-hi);font-size:18px;font-weight:800;line-height:25px;color:#FFFFFF;text-align:center;}
 .jl-find .jl-poem{padding:26px 54px;gap:14px;border-radius:30px;}
 .jl-find .jl-line.chip{font-size:46px;line-height:1.25;}
 .jl-find .jl-line.chip .jl-w{padding:4px 16px;margin:3px 0;border-radius:16px;}
@@ -2756,3 +2753,51 @@ body.vo-busy #slideHost .jl-bottle-opt{pointer-events:none !important;}
 .jl-toss-swifty.celebrating .jl-sw-grip,.jl-toss-swifty.celebrating .jl-sw-throw{display:none;}
 .jl-toss-swifty.celebrating .jl-sw-cheer{display:block;}
 @media(prefers-reduced-motion:reduce){.jl-toss-swifty{transition:none;}.jl-sw-actor{animation:none;}.jl-toss-swifty.windup,.jl-toss-swifty.throwing{transform:none;}}
+
+/* ===== lead review 2026-11-20 - the speaker and play button logic of File6 (MTG2A01_L04_S01, its 2026-11-18 checklist round,
+   File4's rules) =====
+   The title screen's speaker: the standard 70 x 70 (was 58), its centre where it was (left 96 + 29, bottom -16 + 29). */
+.sg-vo{width:70px;height:70px;left:90px;bottom:-22px;}
+/* body.spk-busy (app.js setPlaying: on while any clip plays, off 0.7s after) and a page's own "not now" (.chip-wait: the page is
+   still talking between its lines, or it is solved) both grey every speaker - the cover's, the header chip, the teaching card's -
+   and take its taps away. Waiting for the child, the speaker is blue and replays the line. */
+body.spk-busy .audio-chip, body.spk-busy .tut-audio, body.spk-busy .sg-vo,
+.audio-chip.chip-wait, .tut-audio.chip-wait{pointer-events:none !important;cursor:default;opacity:.45;filter:grayscale(.75);}
+.audio-chip, .tut-audio, .sg-vo{transition:opacity .25s ease, filter .25s ease;}
+/* the play button appears for the first time when the greeting is over; after that a replay of the greeting no longer hides it -
+   it stays on screen as the grey disabled disc (btn-play-round-waiting.svg, no tap, no pulse) until the line ends */
+.sg-btn.sg-shown.sg-waiting{visibility:visible !important;pointer-events:none !important;animation:none;}
+
+/* ===== lead review 2026-11-20 - pages 8, 9: the pictures first, then Swifty's line, then the title =====
+   The two cards come in (rise + fade, one after the other); the title is held back (its space kept, so nothing moves) until the
+   line has been said; then it comes in and its words light one by one as page 1's lines do (orange #FF8A00, 1.1x). */
+.jl-card.jl-meet-in{animation:jlMeetIn .55s cubic-bezier(.3,1.35,.5,1) backwards;}
+@keyframes jlMeetIn{from{opacity:0;translate:0 34px;}to{opacity:1;translate:0 0;}}
+.tut-prompt.jl-head-wait{visibility:hidden;}
+.tut-prompt.jl-head-in{animation:jlHeadIn .45s cubic-bezier(.3,1.3,.5,1) backwards;}
+@keyframes jlHeadIn{from{opacity:0;translate:0 -18px;scale:.92;}to{opacity:1;translate:0 0;scale:1;}}
+.tut-prompt .jl-w{display:inline-block;padding:0;border-radius:0;background:none;transition:color .15s ease,transform .15s ease;}
+.tut-prompt .jl-w.now{color:#FF8A00;transform:scale(1.10);}
+@media(prefers-reduced-motion:reduce){.jl-card.jl-meet-in,.tut-prompt.jl-head-in{animation:none;}}
+
+/* ===== lead review 2026-11-20 - page 10's star track (it replaces the 0/6 counter and the numbers on the words) =====
+   Six grey stars on a soft track; each word found sends a gold star to the next place (app.js earnStar): the place fills gold
+   with a pop, a glow and a sparkle burst (the ring toss's), and the gold fill of the track grows up to it. */
+.jl-stars{position:relative;align-self:center;display:flex;align-items:center;gap:22px;padding:7px 26px;border-radius:999px;
+  background:#F3F5F9;border:3px solid #E2E6EE;box-shadow:inset 0 3px 0 rgba(11,42,90,.06);margin-bottom:-2px;}
+.jl-stars-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;pointer-events:none;
+  background:linear-gradient(180deg,#FFE58A,#FFC93C);box-shadow:inset 0 -4px 0 rgba(232,154,0,.25);transition:width .6s cubic-bezier(.3,1.2,.5,1);}
+.jl-star{position:relative;z-index:1;width:46px;height:46px;display:flex;align-items:center;justify-content:center;}
+.jl-star svg,.jl-star-fly svg{display:block;width:44px;height:44px;overflow:visible;}
+.jl-star svg path{fill:#D3D7DF;stroke:#BFC5CF;stroke-width:2;stroke-linejoin:round;transition:fill .25s ease,stroke .25s ease;}
+.jl-star.on svg path,.jl-star-fly svg path{fill:#FFC21A;stroke:#E89A00;stroke-width:2;stroke-linejoin:round;}
+.jl-star.on svg{animation:jlStarWin .65s cubic-bezier(.3,1.6,.5,1);filter:drop-shadow(0 0 8px rgba(255,190,30,.85)) drop-shadow(0 2px 0 rgba(170,100,0,.35));}
+@keyframes jlStarWin{0%{scale:.4;rotate:-40deg;}60%{scale:1.35;rotate:12deg;}100%{scale:1;rotate:0deg;}}
+.jl-star-burst{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;pointer-events:none;opacity:0;z-index:2;
+  animation:jlSpark .7s ease-out;box-shadow:0 -38px 0 #FFD43B,34px -19px 0 #FF8FB1,38px 14px 0 #74C0FC,0 36px 0 #FFD43B,-38px 14px 0 #51CF66,-34px -19px 0 #FF8FB1;}
+.jl-star-burst::after{content:"";position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;
+  border:3px solid rgba(255,201,60,.9);animation:jlStarRing .6s ease-out forwards;}
+@keyframes jlStarRing{from{scale:.2;opacity:1;}to{scale:1.3;opacity:0;}}
+.jl-star-fly{position:absolute;z-index:30;width:44px;height:44px;pointer-events:none;filter:drop-shadow(0 0 10px rgba(255,200,40,.9));}
+@media(prefers-reduced-motion:reduce){.jl-star.on svg,.jl-star-burst,.jl-star-burst::after{animation:none;}.jl-stars-fill{transition:none;}}
+.tut-prompt .jl-head-line{word-spacing:.14em;}                                   /* (room for the lit word at 1.1x) */
