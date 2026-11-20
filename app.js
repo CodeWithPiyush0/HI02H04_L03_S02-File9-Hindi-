@@ -1727,13 +1727,17 @@ const JalebiModules = {
       // Read the prerecorded waveform at the VO's current time; pause, silence and leaving P1 close the beak.
       const lip = d.lip_sync || { tracks: {}, step_ms: 40 };
       const voiceIds = new Map(Object.entries((CARD.assets && CARD.assets.audio) || {}).map(([id, file]) => [file, id]));
-      let mouthAmount = 0, mouthFrame = performance.now(), celebrationAt = null, spriteFrame = 0, spriteChangedAt = 0;
+      /* cheerHold: the line is over - the cheer loop stops the next time it reaches CHEER_STILL (arms up, smiling) and
+         stays on it (user 2026-11-20: "the swifty keep jumping" - a still picture after the VO) */
+      const CHEER_STILL = 8;
+      let mouthAmount = 0, mouthFrame = performance.now(), celebrationAt = null, spriteFrame = 0, spriteChangedAt = 0, cheerHold = false, cheerStill = false;
       const animateMouth = now => {
         if(!C.alive()) return;
-        if(celebrationAt !== null){
+        if(celebrationAt !== null && !cheerStill){
           const elapsedFrame = Math.floor((now - celebrationAt) / 60);
-          const frame = JK.reduce() ? 8 : elapsedFrame < 36 ? elapsedFrame : 6 + (elapsedFrame - 36) % 12;
+          const frame = JK.reduce() ? CHEER_STILL : elapsedFrame < 36 ? elapsedFrame : 6 + (elapsedFrame - 36) % 12;
           cheer.style.backgroundPosition = `${(frame % 6) * 20}% ${Math.floor(frame / 6) * 20}%`;
+          if(cheerHold && frame === CHEER_STILL) cheerStill = true;
         }
         const id = voiceIds.get(voEl.getAttribute("data-asset")), track = lip.tracks[id];
         const speaking = isPlaying && !voEl.paused && !voEl.ended && !document.hidden;
@@ -1774,6 +1778,11 @@ const JalebiModules = {
       const shelf = JK.add(field, "div", "jl-prizes"); const slots = Q.map(()=> JK.add(shelf, "div", "jl-prize-slot"));
       // One linked hoop per round; unearned hoops stay silver.
       const levelColours = d.level_colors || ["#188FE5", "#F03E3E", "#31B85A", "#A455DA", "#007F91", "#E94E91"];
+      /* the bottles in the round ring's opposite colour, so the ring shows on them (user 2026-11-20: same-colour bottle and
+         ring "does not look good"); the rings and the board keep the round's colour. No orange / yellow / brown (user
+         2026-11-20: they blend into the wooden stall). Ring -> bottles: blue -> lime, red -> teal, green -> magenta,
+         purple -> cyan, teal -> pink, pink -> green */
+      const bottleColours = d.bottle_colors || ["#7CC63A", "#12A89D", "#D9479A", "#1FB6E0", "#F06BB0", "#2EAD5B"];
       const PRIZE_RING = '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="prize-ring-rim" cx="32" cy="32" r="24" fill="none" stroke-width="10"/><circle class="prize-ring-colour" cx="32" cy="31" r="24" fill="none" stroke-width="6"/><path d="M12 28A21 21 0 0 1 34 10" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/></svg>';
       shelf.setAttribute("role", "progressbar"); shelf.setAttribute("aria-label", "Completed levels");
       shelf.setAttribute("aria-valuemin", "0"); shelf.setAttribute("aria-valuemax", String(Q.length)); shelf.setAttribute("aria-valuenow", "0");
@@ -1877,7 +1886,7 @@ const JalebiModules = {
         });
         sfxGlassBreak();
       };
-      const render = (b, o)=>{ b.style.setProperty("--glass", levelColours[cur % levelColours.length]);
+      const render = (b, o)=>{ b.style.setProperty("--glass", bottleColours[cur % bottleColours.length]);
         b.innerHTML = '<span class="jl-bottle">' + BOTTLE + '</span><span class="jl-opt-word">' + o.word + '</span>'; };
       let cur = 0;
       const header = t =>{ $("promptText").textContent = t; bubbleText.textContent = t; };
@@ -1936,12 +1945,15 @@ const JalebiModules = {
         state.locked = true; tgt.innerHTML = ""; opts.innerHTML = "";
         shelf.classList.add("full");
         celebrationAt = performance.now(); swifty.classList.add("celebrating");
-        bubbleText.textContent = "शाबाश! सभी तुकांत शब्द पहचान लिए!";
+        /* the bubble shows the words of the line Swifty says (audio.done - vo_toss_done, user 2026-11-20) */
+        bubbleText.textContent = (CARD.assets.audio_text || {})[slide.audio && slide.audio.done] || "शाबाश! आपने सभी तुकांत शब्द पहचान लिए!";
         sfxCorrect(); try{ confettiCannon(); }catch(e){} setSwMood("happy");
         GameBus.emit("rhyme_ring_done", { slide_id: slide.id, phase: slide.phase });
-        /* the bubble's line said (audio.done - vo_toss_done, once it is recorded); without it, the bubble alone as before */
-        const doneLine = jlHasClip(slide.audio && slide.audio.done) ? (setSwMood("talk"), C.say("done").catch(()=>{})) : null;
-        await Promise.all([C.wait(2400), doneLine]); setSwMood("happy"); completeSlide(true);
+        /* the line after the cheer's first burst, then the screen held 2.5 s more so the child can read it before the end
+           screen (user 2026-11-20) */
+        await C.wait(500);
+        if(jlHasClip(slide.audio && slide.audio.done)){ setSwMood("talk"); await C.say("done").catch(()=>{}); }
+        cheerHold = true; setSwMood("happy"); await C.wait(2500); completeSlide(true);
       });
     }
   },
@@ -2589,6 +2601,7 @@ const ASSET_SIZES = {
   "assets/voiceover/vo_t8.ogg": 39857,
   "assets/voiceover/vo_t9.ogg": 46066,
   "assets/voiceover/vo_toss_hint3.ogg": 11152,
+  "assets/voiceover/vo_toss_done.ogg": 15532,
   "assets/voiceover/vo_word_0.ogg": 3507,
   "assets/voiceover/vo_word_1.ogg": 12593,
   "assets/voiceover/vo_word_10.ogg": 3852,

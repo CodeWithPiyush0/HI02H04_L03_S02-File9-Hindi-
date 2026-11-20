@@ -12,7 +12,7 @@
      request, so without this the very first paint is unstyled. This inline rule
      lands the loader's own colour on the first frame. -->
 <style>html,body{background:#FFFFFF;margin:0;}</style>
-<link rel="stylesheet" href="style.css?v=20261120g">
+<link rel="stylesheet" href="style.css?v=20261120j">
 <!-- [loading] the landing's own files start downloading with the page, alongside style.css - not only once app.js has
      arrived and asked for them (the boot loader waits for exactly these: app.js Assets, CRIT). http(s) only: on
      file:// a preload of a fetch() fails, and local files need no head start. -->
@@ -337,7 +337,8 @@
    "vo_word_7": "assets/voiceover/vo_word_7.ogg",
    "vo_word_8": "assets/voiceover/vo_word_8.ogg",
    "vo_word_9": "assets/voiceover/vo_word_9.ogg",
-   "vo_yes": "assets/voiceover/vo_yes.ogg"
+   "vo_yes": "assets/voiceover/vo_yes.ogg",
+   "vo_toss_done": "assets/voiceover/vo_toss_done.ogg"
   },
   "audio_text": {
    "vo_box1": "राजा का तुकांत शब्द पहचानिए।",
@@ -478,7 +479,8 @@
    "vo_word_7": "केला",
    "vo_word_8": "राजा",
    "vo_word_9": "रानी",
-   "vo_yes": "हाँ।"
+   "vo_yes": "हाँ।",
+   "vo_toss_done": "शाबाश! आपने सभी तुकांत शब्द पहचान लिए!"
   },
   "audio_timing": {
    "vo_box1": {
@@ -2469,6 +2471,21 @@
      ]
     ],
     "d": 1113
+   },
+   "vo_toss_done": {
+    "s": 280,
+    "e": 3648,
+    "segs": [
+     [
+      280,
+      1302
+     ],
+     [
+      1425,
+      3648
+     ]
+    ],
+    "d": 4032
    }
   }
  },
@@ -3406,7 +3423,8 @@
    "type": "RING_TOSS",
    "prompt_hi": "सही तुकांत शब्द वाली बोतल पर टैप कीजिए।",
    "audio": {
-    "hint3": "vo_toss_hint3"
+    "hint3": "vo_toss_hint3",
+    "done": "vo_toss_done"
    },
    "data": {
     "bg": "mela",
@@ -3614,7 +3632,8 @@
       "vo_word_25": "00000001233331000000000000000000000000000000000",
       "vo_word_26": "00000003332110000000000",
       "vo_word_27": "0000000333333322000000000000000",
-      "vo_word_28": "000000022223332100000000000000"
+      "vo_word_28": "000000022223332100000000000000",
+      "vo_toss_done": "00000001113333221232222222110000000233300033321113212222022022222101221000222201222222333220000000000"
      }
     }
    }
@@ -3747,6 +3766,6 @@
 
 <!-- ============ ENGINE ============ -->
 <script src="swiftpal-bridge.js"></script>   <!-- [QA 01] host bridge: Android / iOS / web - must load before app.js -->
-<script src="app.js?v=20261120g"></script>
+<script src="app.js?v=20261120j"></script>
 </body>
 </html>
