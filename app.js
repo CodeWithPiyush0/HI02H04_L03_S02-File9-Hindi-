@@ -1084,7 +1084,10 @@ function jlPick(C, parent, cfg){
       show(b){ if(b && !b.classList.contains("in")){ b.classList.add("in"); PVSFX.appear(); } },
       showAll(){ els.forEach(b => M.show(b)); },
       byWord: w => els.find(b => b._o.word === w),
-      lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } }); right.classList.remove("hint-on"); } };
+      /* hint 3 (lead review 2026-11-20): the wrong options dimmed and disabled, the right one with a green border and the
+         hand on it, until it is tapped */
+      lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } });
+        right.classList.add("hint-on"); placeNudge(cfg.nudgeAt ? cfg.nudgeAt(right) : right); } };
     const clearIdlePulse = ()=> row.classList.remove("idle-pulse");
     const idle = JK.idle(C, async ()=>{
       if(busy || over) return;
@@ -1119,7 +1122,8 @@ function jlPick(C, parent, cfg){
       els.forEach(x =>{
         if(x === b) return;
         if(cfg.keepAlternatives){ x.disabled = true; x.classList.add("locked"); x.classList.remove("hint-on", "say-glow", "faded"); }
-        else x.classList.add("pv-gone");
+        /* the wrong options stay, dimmed and disabled (lead review 2026-11-20: they used to disappear) */
+        else { x.disabled = true; x.classList.add("faded", "locked"); x.classList.remove("hint-on", "say-glow"); }
       });
       try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: true, attempt: wrong + 1, score: wrong === 0 ? 1 : 0 }); }catch(e){}
       GameBus.emit(cfg.signal || "rhyme_pick_correct", { slide_id: cfg.key || slide.id, phase: slide.phase, value: wrong === 0, first_try: wrong === 0, attempts: wrong + 1, latency_ms: Date.now() - state.slideStart });
@@ -1630,10 +1634,11 @@ const JalebiModules = {
             const tm = (CARD.assets.audio_timing || {})[b._o.audio], lead = Math.min(400, tm ? tm.s : 0);
             await C.wait(620 - lead);
             const word = C.sayId(b._o.audio);
-            await C.wait(lead); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank); b.style.visibility = "hidden";
-            const sent = wrap.querySelector(".jl-sentence"), s = sent.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-            sent.style.transition = "translate .55s cubic-bezier(.3,.8,.3,1)";
-            sent.style.translate = "0 " + ((w.top + w.height / 2 - s.top - s.height / 2) / k) + "px";
+            await C.wait(lead); blank.textContent = b._o.word; blank.classList.add("filled"); JK.pop(blank);
+            /* the options stay now (lead review 2026-11-20), so the sentence stays where it is and the right card comes
+               back to its place, green, beside the dimmed wrong ones */
+            b.style.transition = "none"; b.style.translate = ""; b.style.scale = "1"; void b.offsetWidth;
+            b.style.transition = "opacity .25s ease"; b.style.opacity = "1"; JK.pop(b);
             await Promise.all([word, C.wait(560)]);
             return true; },
           onReady: M =>{
@@ -1883,7 +1888,7 @@ const JalebiModules = {
         const card = jlQPic(tgt, q.target); JK.pop(card);
         card.onclick = ()=>{ if(!isPlaying && C.alive()){ PVSFX.tap(); C.sayId(q.target.audio).catch(()=>{}); } };
         state.replayAudio = ()=>{ if(!isPlaying && C.alive()) QC.say("prompt").catch(()=>{}); };
-        const wrong = await jlPick(QC, opts, { options: roundOptions[i], keep_order: true, key: qs.id, signal: "rhyme_ring_correct", optClass: "jl-bottle-opt", idlePulse: true, keepAlternatives: true, render, throwAt,
+        const wrong = await jlPick(QC, opts, { options: roundOptions[i], keep_order: true, key: qs.id, signal: "rhyme_ring_correct", optClass: "jl-bottle-opt", idlePulse: true, keepAlternatives: true, render, throwAt, nudgeAt: b => b.querySelector(".jl-opt-word"),
           ladder: async (n, M)=>{ if(n === 2){
               // The bottles are shuffled: replay each word in its displayed left-to-right order.
               for(const bottle of M.els){
@@ -1893,7 +1898,7 @@ const JalebiModules = {
               }
             }
             else if(n >= 3){   // SME 2026-11-09: the same hint 3 on every question - the hand, the right word lit, its line
-              M.lock(); placeNudge(M.right.querySelector(".jl-opt-word"));   // only the correct bottle remains enabled
+              M.lock();   // only the correct bottle remains enabled; the hand on its word (cfg.nudgeAt)
               if(jlHasClip(slide.audio && slide.audio.hint3)) await C.say("hint3"); } },
           /* the question, then the bottles come in one by one, silently (SME 2026-11-09: no audio for the options) */
           onReady: M =>{ setSwMood("talk"); QC.say("prompt").then(async ()=>{ setSwMood("point"); await jlShowOptions(C, M); M.ready();
@@ -1934,7 +1939,9 @@ const JalebiModules = {
         bubbleText.textContent = "शाबाश! सभी तुकांत शब्द पहचान लिए!";
         sfxCorrect(); try{ confettiCannon(); }catch(e){} setSwMood("happy");
         GameBus.emit("rhyme_ring_done", { slide_id: slide.id, phase: slide.phase });
-        await C.wait(2400); completeSlide(true);
+        /* the bubble's line said (audio.done - vo_toss_done, once it is recorded); without it, the bubble alone as before */
+        const doneLine = jlHasClip(slide.audio && slide.audio.done) ? (setSwMood("talk"), C.say("done").catch(()=>{})) : null;
+        await Promise.all([C.wait(2400), doneLine]); setSwMood("happy"); completeSlide(true);
       });
     }
   },

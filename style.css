@@ -2495,7 +2495,7 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-q{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:42px;}
 .jl-pair{display:flex;align-items:center;gap:26px;}
 .jl-pair-dash{font-family:var(--font-hi);font-weight:800;font-size:56px;color:#7B8BA8;}
-.jl-sentence{padding:18px 40px;border-radius:24px;background:#fff;border:3px solid #D5D8DF;box-shadow:0 5px 0 #D9D9D9;text-align:center;
+.jl-sentence{padding:18px 40px;border-radius:24px;background:#fff;border:3px solid #D5D8DF;box-shadow:0 5px 0 #D9D9D9;text-align:left;   /* lead review 2026-11-20: left aligned */
   font-family:var(--font-hi);font-weight:800;font-size:46px;line-height:1.35;color:#012F76;}
 .jl-blank{display:inline-block;min-width:150px;height:1.15em;margin:0 6px;vertical-align:-.12em;border-bottom:5px dashed #7B8BA8;}
 .jl-blank.filled{height:auto;padding:0 10px;color:#00A12E;text-align:center;}   /* user 2026-11-09: only the word, written above the dashes (they stay) */
@@ -2511,8 +2511,8 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-opt-word{display:inline-block;}
 /* (user 2026-11-09) a wrong option is not coloured on any page - it only wiggles (app.js JK.shake); .wrong has no style */
 .jl-opt.correct{border:5px solid #00B132;background:#EFFBF2;opacity:1;box-shadow:0 4px 0 #A8E3B9,0 0 6px #00B132,0 0 14px rgba(0,177,50,.45);animation:mqRight .45s cubic-bezier(.3,1.6,.5,1) both;}
-.jl-opt.hint-on{border-color:#00B132;box-shadow:0 4px 0 #D9D9D9,0 0 0 6px rgba(0,177,50,.28);}
-.jl-opt.faded{opacity:.45 !important;}
+.jl-opt.hint-on{border:5px solid #00B132;background:#EFFBF2;box-shadow:0 4px 0 #A8E3B9,0 0 0 6px rgba(0,177,50,.28);}   /* hint 3: green, the hand on it */
+.jl-opt.faded{opacity:.4 !important;filter:saturate(.5);}
 .jl-opt.locked{pointer-events:none;}
 .jl-opt.pv-gone{opacity:0 !important;visibility:hidden;pointer-events:none !important;transition:opacity .45s ease-out,visibility 0s .45s !important;}
 
@@ -2606,14 +2606,14 @@ body.vo-busy #slideHost .jl-gift{pointer-events:none !important;}
 .jl-qpics.two .jl-qpic{width:440px;}
 .jl-qpic-img{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
 .jl-qpic-img img{max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;border-radius:10px;pointer-events:none;}
-.jl-qpic-name{flex-shrink:0;font-weight:800;font-size:40px;line-height:1.15;color:#0B3D8C;}
+.jl-qpic-name{flex-shrink:0;font-weight:800;font-size:32px;line-height:1.15;color:#0B3D8C;}   /* lead review 2026-11-20: 40 <-> the options' 32 swapped */
 body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 .jl-opts.ref{position:absolute;left:0;right:0;top:376px;gap:36px;}
 .jl-opts.ref .jl-opt{width:344px;min-width:344px;height:78px;box-sizing:border-box;padding:10px 12px;border:3px solid #DADBDF;border-radius:28px;
-  background:#FFFFFF;box-shadow:0 7px 0 #D3D4D8;font-size:32px;font-weight:800;line-height:36.8px;color:#0B3D8C;}
+  background:#FFFFFF;box-shadow:0 7px 0 #D3D4D8;font-size:40px;font-weight:800;line-height:46px;color:#0B3D8C;}
 .jl-opts.ref .jl-opt:active{box-shadow:0 3px 0 #D3D4D8;translate:0 4px;}
 .jl-opts.ref .jl-opt.correct{border:4px solid #00B132;background:#EFFBF2;box-shadow:0 7px 0 #A8E3B9,0 0 14px rgba(0,177,50,.4);}
-.jl-opts.ref .jl-opt.hint-on{border-color:#00B132;box-shadow:0 7px 0 #D3D4D8,0 0 0 6px rgba(0,177,50,.28);}
+.jl-opts.ref .jl-opt.hint-on{border:4px solid #00B132;background:#EFFBF2;box-shadow:0 7px 0 #A8E3B9,0 0 0 6px rgba(0,177,50,.28);}
 /* page 10 (G1): the poem box bigger, so it fills the page (user 2026-11-03); over it the star track (lead review 2026-11-20 -
    it replaces the 0/6 counter and the numbers on the words, SME 2026-11-09) - see "page 10's star track" at the end */
 .jl-find{position:relative;flex:1;justify-content:center;}
@@ -2629,7 +2629,9 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 /* hint 2 (user 2026-11-04): each option / picture lights as the voice says it - in orange, the word too (SME 2026-11-09) */
 .jl-opt.say-glow,.jl-opts.ref .jl-opt.say-glow{border-color:#FF8A00;background:#FFF1E0;color:#E06A00;scale:1.06;box-shadow:0 7px 0 #F6C48A,0 0 0 8px rgba(255,138,0,.24);transition:scale .15s,border-color .15s,background .15s,color .15s;}
 .jl-opt.say-glow .jl-opt-word{color:#E06A00;}
-.jl-qpic.say-glow{scale:1.04;box-shadow:0 3px 10px rgba(11,42,90,.18),0 0 0 8px rgba(255,138,0,.38);transition:scale .15s,box-shadow .15s;}
+/* lead review 2026-11-20 (page 12): the picture grows DOWN from its top edge and its orange ring is drawn inside it, so
+   nothing of it goes up under the instruction panel */
+.jl-qpic.say-glow{scale:1.04;transform-origin:50% 0;box-shadow:0 3px 10px rgba(11,42,90,.18),inset 0 0 0 6px rgba(255,138,0,.55);transition:scale .15s,box-shadow .15s;}
 .jl-qpic.say-glow .jl-qpic-name{color:#E06A00;}
 /* pages 14-15: the sentence read with the voice - each word lit (the poem pages' karaoke: #FF8A00 x1.1), the blank too */
 .jl-sw{display:inline-block;margin:0 3px;transition:color .15s ease,transform .15s ease;}
