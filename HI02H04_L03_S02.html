@@ -12,7 +12,7 @@
      request, so without this the very first paint is unstyled. This inline rule
      lands the loader's own colour on the first frame. -->
 <style>html,body{background:#FFFFFF;margin:0;}</style>
-<link rel="stylesheet" href="style.css?v=20261120b">
+<link rel="stylesheet" href="style.css?v=20261120f">
 <!-- [loading] the landing's own files start downloading with the page, alongside style.css - not only once app.js has
      arrived and asked for them (the boot loader waits for exactly these: app.js Assets, CRIT). http(s) only: on
      file:// a preload of a fetch() fails, and local files need no head start. -->
@@ -3411,17 +3411,7 @@
    "data": {
     "bg": "mela",
     "stall": "assets/images/ringtoss_stall.webp",
-    "bottles": [
-     {
-      "color": "#F03E3E"
-     },
-     {
-      "color": "#2F9BF0"
-     },
-     {
-      "color": "#3DC93D"
-     }
-    ],
+    "level_colors": ["#188FE5", "#F03E3E", "#31B85A", "#A455DA", "#007F91", "#E94E91"],
     "questions": [
      {
       "prompt_hi": "राजा का तुकांत शब्द पहचानिए।",
@@ -3757,6 +3747,6 @@
 
 <!-- ============ ENGINE ============ -->
 <script src="swiftpal-bridge.js"></script>   <!-- [QA 01] host bridge: Android / iOS / web - must load before app.js -->
-<script src="app.js?v=20261120b"></script>
+<script src="app.js?v=20261120f"></script>
 </body>
 </html>

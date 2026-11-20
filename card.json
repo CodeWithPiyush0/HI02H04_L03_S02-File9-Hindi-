@@ -3260,17 +3260,7 @@
    "data": {
     "bg": "mela",
     "stall": "assets/images/ringtoss_stall.webp",
-    "bottles": [
-     {
-      "color": "#F03E3E"
-     },
-     {
-      "color": "#2F9BF0"
-     },
-     {
-      "color": "#3DC93D"
-     }
-    ],
+    "level_colors": ["#188FE5", "#F03E3E", "#31B85A", "#A455DA", "#007F91", "#E94E91"],
     "questions": [
      {
       "prompt_hi": "राजा का तुकांत शब्द पहचानिए।",

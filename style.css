@@ -2667,8 +2667,8 @@ body.vo-busy #slideHost .jl-qpic{pointer-events:none !important;}
 @keyframes jlBottleIdle{0%,100%{rotate:-1.5deg;}50%{rotate:1.5deg;}}
 .jl-bottle svg{display:block;width:100%;height:100%;overflow:visible;}
 .jl-bottle svg .jl-bottle-body,.jl-bottle svg .jl-bottle-neck{fill:var(--glass,#F03E3E);}
-.jl-bottle-opt .jl-opt-word{display:inline-block;min-width:170px;box-sizing:border-box;padding:4px 26px;border:5px solid #F5B82E;border-radius:999px;background:#FFF9EA;
-  box-shadow:0 5px 0 #D99A1E,0 9px 14px rgba(90,40,0,.25);font-size:38px;font-weight:800;line-height:1.2;color:#0B3D8C;text-align:center;transition:border-color .15s,background .15s;}
+.jl-bottle-opt .jl-opt-word{display:inline-block;min-width:170px;box-sizing:border-box;padding:6px 24px;border:4px solid #7460B8;border-radius:20px;background:linear-gradient(#FFFFFF,#F0EBFF);
+  box-shadow:0 6px 0 #493887,inset 0 2px 0 #FFFFFF,0 9px 14px rgba(46,30,92,.25);font-size:38px;font-weight:800;line-height:1.2;color:#0B3D8C;text-align:center;transition:border-color .15s,background .15s,box-shadow .15s,transform .15s;}
 .jl-opt.jl-bottle-opt.wrong,.jl-opt.jl-bottle-opt.correct,.jl-opt.jl-bottle-opt.say-glow,.jl-opt.jl-bottle-opt.hint-on{border:0;background:none;box-shadow:none;}
 .jl-bottle-opt.correct .jl-opt-word,.jl-bottle-opt.hint-on .jl-opt-word{border-color:#00B132;background:#EFFBF2;box-shadow:0 5px 0 #00862A,0 9px 14px rgba(0,80,20,.22);}
 .jl-bottle-opt.say-glow .jl-opt-word{border-color:#FF8A00;background:#FFF1E0;color:#E06A00;box-shadow:0 5px 0 #D96F00,0 0 0 7px rgba(255,138,0,.30);}   /* hint 2 in orange (SME 2026-11-09) */
@@ -2714,23 +2714,65 @@ body.vo-busy #slideHost .jl-bottle-opt{pointer-events:none !important;}
 .stage.ring-scene .header-row,.stage.ring-scene > .stage-inner > .mascot-wrap{display:none;}
 .stage.ring-scene .slide-stage{padding:0;}
 .ring-scene .jl-stall{left:0;top:0;width:1333px;height:750px;}
-.ring-scene .jl-stall-art{left:315px;top:50px;width:840px;height:625px;}
-.ring-scene .jl-toss-target{left:375px;right:auto;top:85px;width:720px;}
-.ring-scene .jl-toss-opts{left:395px;top:330px;}
+.ring-scene .jl-stall-art{left:310px;top:45px;width:870px;height:650px;}
+.ring-scene .jl-stall-wall{position:absolute;left:388px;top:190px;width:715px;height:303px;z-index:1;background:radial-gradient(ellipse at 50% 35%,#FFF0D5,#FFE5B8);pointer-events:none;}
+.ring-scene .jl-toss-target{left:385px;right:auto;top:195px;width:720px;}
+.ring-scene .jl-toss-target .jl-qpic{width:350px;height:200px;padding:0;gap:8px;border:0;background:none;box-shadow:none;}
+.ring-scene .jl-toss-target .jl-qpic-img{overflow:hidden;border-radius:16px;}
+.ring-scene .jl-toss-target .jl-qpic-name{font-size:42px;}
+.ring-scene .jl-toss-opts{left:385px;top:400px;}
+.ring-scene .jl-toss-opts .jl-opts{gap:60px;}
+.ring-scene .jl-opts .jl-opt.jl-bottle-opt{gap:8px;}
 .ring-scene .jl-bottle{width:75px;height:155px;}
-.ring-scene .jl-prizes{left:1180px;top:430px;width:140px;gap:12px 5px;padding:14px 0;isolation:isolate;
-  box-shadow:0 6px 0 #C48E23,2px 9px 6px rgba(107,68,21,.24),6px 17px 16px rgba(107,68,21,.12);}
-.ring-scene .jl-prizes::after{content:"";position:absolute;left:-10px;right:-16px;bottom:-16px;height:22px;z-index:-1;pointer-events:none;
-  border-radius:50%;background:radial-gradient(ellipse,rgba(105,64,20,.38) 0%,rgba(105,64,20,.19) 43%,transparent 73%);filter:blur(4px);}
-.ring-scene .jl-prize-slot{width:57px;height:57px;}
-.ring-scene .jl-prizes{grid-template-columns:repeat(2,57px);}
-.jl-toss-swifty{position:absolute;left:-30px;top:300px;width:330px;height:390px;z-index:5;transform-origin:50% 92%;transition:transform .22s ease;pointer-events:none;}
+/* Raised word buttons sit close to their bottles, with a quiet idle invitation. */
+@media (hover:hover){
+  .ring-scene .jl-bottle-opt.in:not(.locked):not(.correct):not(.hint-on):not(.say-glow):hover .jl-opt-word{border-color:#59429D;background:linear-gradient(#FFFFFF,#E8E0FF);transform:translateY(-2px);}
+}
+.ring-scene .jl-bottle-opt:focus-visible{outline:none;}
+.ring-scene .jl-bottle-opt:focus-visible .jl-opt-word{outline:3px solid #234FAD;outline-offset:5px;}
+.ring-scene .jl-bottle-opt:active .jl-opt-word{transform:translateY(3px);box-shadow:0 2px 0 #493887,inset 0 2px 0 #FFFFFF,0 4px 7px rgba(46,30,92,.2);}
+.ring-scene .jl-opts.idle-pulse .jl-bottle-opt.in:not(.locked):not(.correct):not(.pv-gone) .jl-opt-word{animation:jlWordTapPulse 1.9s ease-in-out 2;}
+@keyframes jlWordTapPulse{0%,100%{transform:scale(1);}50%{transform:translateY(-1px) scale(1.025);}}
+.ring-scene .jl-bottle-opt.shattered .jl-bottle{animation:none;filter:drop-shadow(0 3px 2px rgba(50,35,35,.15));}
+.ring-scene .jl-bottle-opt.shattered .jl-bottle > svg{visibility:hidden;}
+.ring-scene .jl-bottle-opt.shattered .jl-bottle::after{opacity:.3;}
+.ring-scene .jl-bottle-shards,.ring-scene .jl-glass-shard{position:absolute;inset:0;display:block;pointer-events:none;}
+.ring-scene .jl-glass-shard{animation:jlBottleBreak .65s cubic-bezier(.35,.05,.7,1) forwards;}
+@keyframes jlBottleBreak{
+  0%{transform:translate(0,0) rotate(0);opacity:1;}
+  30%{transform:translate(calc(var(--shard-x) * .55),-12px) rotate(calc(var(--shard-rotation) * .45));opacity:1;}
+  100%{transform:translate(var(--shard-x),var(--shard-y)) rotate(var(--shard-rotation)) scale(.65);opacity:.65;}
+}
+.ring-scene .jl-bottle-opt.shattered .jl-opt-word{opacity:.38;filter:saturate(.35);box-shadow:0 2px 0 #A59BBF;cursor:default;animation:none;transform:none;}
+.ring-scene .jl-bottle-opt.shattered{cursor:default;}
+@media (prefers-reduced-motion:reduce){.ring-scene .jl-glass-shard{animation:none;transform:translate(var(--shard-x),var(--shard-y)) rotate(var(--shard-rotation)) scale(.65);opacity:.65;}}
+
+@media (prefers-reduced-motion:reduce){.ring-scene .jl-opts.idle-pulse .jl-opt-word{animation:none !important;}}
+
+.ring-scene .jl-prizes{left:1200px;top:292px;width:104px;display:flex;flex-direction:column;align-items:center;gap:0;padding:14px 0;isolation:isolate;
+  box-shadow:0 6px 0 #C48E23,2px 9px 6px rgba(107,68,21,.24);}
+.ring-scene .jl-prize-slot{position:relative;flex:none;width:56px;height:56px;border:0;border-radius:0;background:none;box-shadow:none;}
+.ring-scene .jl-prize-slot + .jl-prize-slot::before{content:"";position:absolute;left:24px;top:-10px;width:7px;height:20px;z-index:2;border:1.5px solid #B66A00;border-radius:7px;background:linear-gradient(90deg,#D98D00,#FFE287,#ECA900);}
+.ring-scene .jl-prize-slot svg{width:56px;height:56px;}
+.ring-scene .prize-ring-rim{stroke:#85898C;}
+.ring-scene .prize-ring-colour{stroke:#C7CBCE;}
+.ring-scene .jl-prize-slot.won .prize-ring-rim{stroke:var(--prize-rim);}
+.ring-scene .jl-prize-slot.won .prize-ring-colour{stroke:var(--prize-colour);}
+.ring-scene .jl-prize-fly .prize-ring-rim{stroke:var(--hoop-dark);}
+.ring-scene .jl-prize-fly .prize-ring-colour{stroke:var(--hoop-colour);}
+.ring-scene .jl-prize-slot path,.ring-scene .jl-prize-fly path{fill:none;stroke:#fff;stroke-width:2.5;}
+.jl-toss-swifty{position:absolute;left:-20px;top:330px;width:330px;height:390px;z-index:5;transform-origin:50% 92%;transition:transform .22s ease;pointer-events:none;}
 .jl-sw-actor{position:absolute;inset:0;animation:jlSwBreathe 4s ease-in-out infinite;}
 @keyframes jlSwBreathe{0%,100%{translate:0 0;}50%{translate:0 -2px;}}
 .jl-toss-swifty img{position:absolute;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 9px 5px rgba(103,62,12,.2));}
 .jl-sw-throw{opacity:0;}
-.jl-sw-grip{position:absolute;left:0;top:30px;width:330px;height:330px;background:url("assets/images/swifty_grip_sheet.webp") 0 0 / 200% 200% no-repeat;filter:drop-shadow(0 9px 5px rgba(103,62,12,.2));}
-.jl-toss-swifty.released .jl-sw-grip{background-image:url("assets/images/swifty_empty_sheet.webp");}
+.jl-sw-grip{position:absolute;left:0;top:30px;width:330px;height:330px;background:url("assets/images/swifty_empty_sheet.webp") 0 0 / 200% 200% no-repeat;filter:drop-shadow(0 9px 5px rgba(103,62,12,.2));}
+.jl-sw-grip,.jl-sw-throw{z-index:1;}
+/* Render the hoop independently, underneath the original gripping fingers. */
+.jl-sw-held-hoop{position:absolute;left:247px;top:243px;width:164px;height:164px;z-index:0;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(-12deg) scale(var(--held-ring-scale,.68));}
+.jl-sw-held-hoop svg{display:block;width:100%;height:100%;overflow:visible;transform:scaleY(1.15);}
+.jl-toss-swifty.throwing .jl-sw-held-hoop,.jl-toss-swifty.released .jl-sw-held-hoop,.jl-toss-swifty.celebrating .jl-sw-held-hoop{visibility:hidden;}
 .jl-toss-swifty.windup{transform:rotate(-7deg) translateX(-6px);}
 .jl-toss-swifty.throwing{transform:rotate(4deg) translateX(5px);}
 .jl-toss-swifty.throwing .jl-sw-grip{visibility:hidden;}

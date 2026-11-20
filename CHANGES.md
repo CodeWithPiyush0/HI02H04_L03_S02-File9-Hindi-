@@ -110,3 +110,37 @@ node tools/gen_asset_sizes.js    # the preload manifest - after ANY asset change
 python tools/gen_vo_manifest.py  # lesson_vo_manifest.xlsx (File7's format) - after any VO / page change
 ```
 Dev: `index.html?slide=N` opens slide N; `?dev=1` adds the slide navigator.
+
+
+## 2026-11-20 ? Ring-toss layout update
+
+- Enlarged the stall and placed the question picture and word inside its cream wall below the canopy. Bottles sit on the countertop and answer tags on its wooden front.
+- All three bottles share one colour per level: blue, red, green, purple, orange, pink. The held and tossed hoop stays blue.
+- Replaced the star grid with a vertical chain of six silver hoops; each correct answer turns the next hoop blue. Progress also exposes its completed count to assistive technology.
+- Updated both HTML entry points and card.json; bumped CSS/JS cache versions.
+- Validation: JavaScript syntax, diff whitespace, six-round palette and matching embedded data passed. Visual browser QA could not run because the browser access host was unavailable.
+
+
+## 2026-11-20 ? Ring-toss spacing and tap cues
+
+- Added a clear gap beside Swifty by narrowing and shifting the stall; moved Swifty 10px forward and 30px lower, and adjusted the throw origin to match.
+- Raised answer labels 14px closer to their bottles. Purple borders, pale lavender faces, raised shadows, hover, pressed and keyboard focus states make the labels read as buttons.
+- After seven seconds waiting for an answer, labels make two gentle 2.5% pulses. Taps and keyboard interaction clear/restart the reminder; throws stop it, wrong answers rearm it, and correct answers remove the listeners. Reduced-motion preferences suppress the pulse. Other activities keep their existing audio reminders.
+- Validation: simulated timer/interaction checks passed for seven-second timing, pre-ready suppression, pointer and keyboard reset, wrong-answer rearm, success cleanup and unchanged reminders on other activities. JavaScript syntax, matching HTML entry points and diff whitespace checks passed. Browser visual QA remains unavailable in this session.
+
+
+## 2026-11-20 ? Matching level rings and bottle breaks
+
+- Held, thrown and earned hoops now match each level's bottles; earned rings keep their own colour in the progress chain. The held sprite is selectively tinted while preserving the rest of Swifty's artwork.
+- Changed the fifth (gaana) level from orange to deep teal (#007F91), improving separation from the cream wall and wooden counter.
+- After a correct answer, the two unchosen bottles break into six fragments each. Their word labels stay visible at 38% opacity with native disabled buttons. Wrong answers never trigger breakage; other activities retain their existing success behaviour. Reduced-motion mode shows settled fragments without the break animation.
+- Added a locally synthesized 0.72-second glass crack and tinkle with a bounded peak; no external audio dependency.
+- Validation passed: all six matching palettes, teal question mapping, correct/wrong handling, two-bottle fragment count, disabled alternatives, repeated-tap guards, unchanged other activities, sound generation/playback, matching HTML data, JavaScript syntax and diff whitespace. Browser visual/listening QA remains unavailable in this session.
+
+
+## 2026-11-20 ? Clean held-ring rendering
+
+- Removed the colour-mask SVG filter from Swifty. It thresholded sprite pixels and could tint or damage antialiased edges outside the ring.
+- Swifty now uses the existing untouched empty-hand mouth sprite sheet. A separate glossy SVG hoop sits behind the gripping fingers and inherits the level palette used by the tossed hoop. No recolouring is applied to character pixels.
+- Matched the held hoop position/scale to the throw origin; it follows Swifty during idle/windup and hides during release and celebration.
+- Validation: JavaScript syntax, no remaining tint-filter references, sprite/layer wiring, hand/throw anchor alignment, matching HTML entry points and diff whitespace passed. Browser visual QA remains unavailable in this session.

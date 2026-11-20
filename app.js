@@ -393,6 +393,26 @@ const sfxConfetti  = ()=> playSfxFile("sfx_confetti", 0.45);
 const sfxPlay      = ()=> playSfxFile("sfx_play", 0.9);
 const sfxNext      = ()=> playSfxFile("sfx_next", 0.9);   // the आगे tap (a disabled आगे fires no click, so no sound)
 const sfxNudge     = ()=> playSfxFile("sfx_nudge", 0.45);
+// A short glass crack followed by light tinkling fragments; generated locally, with a soft peak.
+function sfxGlassBreak(){
+  const c = _ac(); if(!c) return;
+  const duration = .72, buffer = c.createBuffer(1, Math.ceil(c.sampleRate * duration), c.sampleRate), data = buffer.getChannelData(0);
+  let previousNoise = 0, peak = 0;
+  const impacts = [[0, 1960, .09], [.027, 3180, .12], [.065, 4270, .13], [.12, 2510, .10], [.20, 5390, .09], [.30, 3670, .08], [.41, 6150, .06]];
+  for(let i = 0; i < data.length; i++){
+    const t = i / c.sampleRate, noise = Math.random() * 2 - 1;
+    let value = (noise - previousNoise) * Math.exp(-t / .024) * .35; previousNoise = noise;
+    for(const [delay, frequency, decay] of impacts){
+      const age = t - delay;
+      if(age >= 0) value += (Math.sin(2 * Math.PI * frequency * age) + .45 * Math.sin(2 * Math.PI * frequency * 1.43 * age)) * Math.exp(-age / decay) * .11;
+    }
+    data[i] = value * Math.min(1, t / .0015) * Math.min(1, (duration - t) / .04); peak = Math.max(peak, Math.abs(data[i]));
+  }
+  if(peak) for(let i = 0; i < data.length; i++) data[i] *= .24 / peak;
+  const player = c.createBufferSource(), gain = c.createGain(); player.buffer = buffer; gain.gain.value = .65;
+  player.connect(gain).connect(c.destination); player.onended = ()=>{ player.disconnect(); gain.disconnect(); }; player.start();
+}
+
 /* background music: one looping element, started by the play tap (never before it), ducked under every VO clip,
    paused while the app is in the background. bgmFor(phase) picks the track: the practice game has its own. */
 /* 2026-10-07: bgm.ogg is the team's "Standard Background Music 2" (bouncy, seamless 4-min loop; "1" is an 18s lo-fi loop
@@ -1065,7 +1085,22 @@ function jlPick(C, parent, cfg){
       showAll(){ els.forEach(b => M.show(b)); },
       byWord: w => els.find(b => b._o.word === w),
       lock(){ els.forEach(x =>{ if(x !== right){ x.classList.add("faded", "locked"); x.disabled = true; } }); right.classList.remove("hint-on"); } };
-    const idle = JK.idle(C, async ()=>{ if(busy || over) return; busy = true; await (cfg.reask ? cfg.reask() : C.say("prompt")); busy = false; });
+    const clearIdlePulse = ()=> row.classList.remove("idle-pulse");
+    const idle = JK.idle(C, async ()=>{
+      if(busy || over) return;
+      if(cfg.idlePulse){
+        if(isPlaying || document.hidden) return;
+        clearIdlePulse(); void row.offsetWidth; row.classList.add("idle-pulse");
+        return;
+      }
+      busy = true; await (cfg.reask ? cfg.reask() : C.say("prompt")); busy = false;
+    });
+    // A tap or keyboard interaction restarts the seven-second visual reminder.
+    const onIdleActivity = ()=>{ clearIdlePulse(); if(!busy && !over) idle.arm(); };
+    if(cfg.idlePulse){ C.root.addEventListener("pointerdown", onIdleActivity); C.root.addEventListener("keydown", onIdleActivity); }
+    const detachIdleActivity = ()=>{
+      if(cfg.idlePulse){ C.root.removeEventListener("pointerdown", onIdleActivity); C.root.removeEventListener("keydown", onIdleActivity); }
+    };
     async function onWrong(b){
       wrong++; busy = true; idle.stop(); stopNudge();
       try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: false, attempt: wrong, score: 0 }); }catch(e){}
@@ -1079,9 +1114,13 @@ function jlPick(C, parent, cfg){
       if(C.alive() && !over){ busy = false; setSwMood("point"); idle.arm(); }
     }
     async function onRight(b){
-      over = true; busy = true; idle.stop(); stopNudge();
+      over = true; busy = true; idle.stop(); clearIdlePulse(); detachIdleActivity(); stopNudge();
       b.classList.remove("hint-on"); b.classList.add("correct");
-      els.forEach(x =>{ if(x !== b) x.classList.add("pv-gone"); });
+      els.forEach(x =>{
+        if(x === b) return;
+        if(cfg.keepAlternatives){ x.disabled = true; x.classList.add("locked"); x.classList.remove("hint-on", "say-glow", "faded"); }
+        else x.classList.add("pv-gone");
+      });
       try{ XAPI.send("question_answered", { slide_id: slide.id, type: slide.type, phase: slide.phase }, { is_correct: true, attempt: wrong + 1, score: wrong === 0 ? 1 : 0 }); }catch(e){}
       GameBus.emit(cfg.signal || "rhyme_pick_correct", { slide_id: cfg.key || slide.id, phase: slide.phase, value: wrong === 0, first_try: wrong === 0, attempts: wrong + 1, latency_ms: Date.now() - state.slideStart });
       sfxCorrect(); try{ confettiCannon(); }catch(e){} setSwMood("happy");
@@ -1093,7 +1132,7 @@ function jlPick(C, parent, cfg){
     }
     els.forEach(b => b.addEventListener("click", ()=>{
       if(busy || over || !C.alive() || b.classList.contains("locked") || !b.classList.contains("in")) return;
-      PVSFX.tap(); busy = true; idle.stop(); stopNudge();
+      PVSFX.tap(); busy = true; idle.stop(); clearIdlePulse(); stopNudge();
       /* cfg.throwAt (the ring toss): the page's own throw plays first, then the answer is judged */
       Promise.resolve(cfg.throwAt ? cfg.throwAt(b, b === right) : null).then(()=> C.alive() ? (b === right ? onRight(b) : onWrong(b)) : null).catch(()=>{});
     }));
@@ -1658,20 +1697,21 @@ const JalebiModules = {
     /* deck pages 19 (x6), as a game (user 2026-11-05: "gamified", not a journey - the mela ring-toss stall): a stall at the
        mela, Muniya beside it and her prize shelf (six places). Each of the deck's six questions: the word's picture hangs
        on the stall, three bottles stand on the counter, each with an option word, coming in as their words are said. A
-       tapped bottle gets the ring thrown at it in an arc - the right one: the ring drops over its neck, a star flies to
+       tapped bottle gets the ring thrown at it in an arc - the right one: the ring drops over its neck, a blue hoop flies to
        its place on the board (SME 2026-11-09); a wrong one: the ring bounces off and falls back (the wrong sound, the
        bottle wobbles), then the deck's help: 2nd wrong - the options said again, each lighting orange; 3rd - the hand
-       on the right bottle, its word lit, "यह सही उत्तर है, इसपर टैप कीजिए।". Six stars: confetti - then the trophy.
+       on the right bottle, its word lit, "यह सही उत्तर है, इसपर टैप कीजिए।". Six linked hoops: confetti - then the celebration.
        The bottles come in one by one, silently, after the question (SME 2026-11-09).
-       data: { questions:[{prompt_hi, audio:{prompt, hint2}, target, options}], stall, bg, bottles:[{color}] }.
+       data: { questions:[{prompt_hi, audio:{prompt, hint2}, target, options}], stall, bg, level_colors }.
        audio: hint3 (every question's). */
     mount(host, slide){
       const d = slide.data, C = JK.ctx(slide, host), Q = d.questions;
       const roundOptions = jlRingOptions(Q, "swiftpal:ring-order:" + CARD.skill_code + ":" + slide.id);
       state.ownsAudio = true; state.locked = false; setNavActive(false); $("navBtn").style.display = "none"; setSwMood("point");
       const field = JK.add(JK.add(host, "div", "jl-toss"), "div", "jl-stall");
-      /* the stall: the user's art (2026-11-05, ringtoss_stall) - its striped canopy, purple wall and wooden counter */
+      /* Existing striped canopy and wooden counter, with a cream inset behind the question. */
       const art = JK.add(field, "img", "jl-stall-art"); art.src = d.stall; art.alt = ""; art.draggable = false;
+      JK.add(field, "div", "jl-stall-wall").setAttribute("aria-hidden", "true");
       const swifty = JK.add(field, "div", "jl-toss-swifty");
       const actor = JK.add(swifty, "div", "jl-sw-actor");
       const swReady = JK.add(actor, "div", "jl-sw-grip"); swReady.setAttribute("role", "img"); swReady.setAttribute("aria-label", "Swifty");
@@ -1697,7 +1737,7 @@ const JalebiModules = {
         const to = speaking && track ? Number(track[frame + 1] || 0) / 3 : 0;
         const target = from + (to - from) * fraction;
         const dt = Math.min(64, Math.max(1, now - mouthFrame)); mouthFrame = now;
-        // Each mouth state is part of the original character artwork, including the gripping hand and ring.
+        // Mouth frames use the untouched empty-hand sprite; the hoop is its own layer behind the fingers.
         mouthAmount += (target - mouthAmount) * (1 - Math.exp(-dt / (target > mouthAmount ? 55 : 85)));
         if(!speaking && mouthAmount < .015) mouthAmount = 0;
         const nextFrame = speaking ? Math.round(mouthAmount * 3) : 0;
@@ -1715,23 +1755,44 @@ const JalebiModules = {
          over each other - the far half and the near half. In the air both are in front; once it drops over a bottle the
          far half goes behind the bottle and the near half stays in front, so the bottle stands INSIDE the ring */
       const back = JK.add(field, "div", "jl-ring back"), front = JK.add(field, "div", "jl-ring front");
-      const hoopArt = '<svg viewBox="0 0 180 180" aria-hidden="true"><defs><linearGradient id="hoopMetal" x1="0" y1="0" x2=".75" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#D9FFFF"/><stop offset=".25" stop-color="#67EEE6"/><stop offset=".54" stop-color="#15B9C3"/><stop offset=".8" stop-color="#36D7DC"/><stop offset="1" stop-color="#08728D"/></linearGradient></defs>' +
-        '<circle cx="90" cy="101" r="63" fill="none" stroke="#085C78" stroke-width="27"/>' +
-        '<circle cx="90" cy="97" r="63" fill="none" stroke="#0B94A7" stroke-width="26"/>' +
+      const hoopArt = '<svg viewBox="0 0 180 180" aria-hidden="true"><defs><linearGradient id="hoopMetal" x1="0" y1="0" x2=".75" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="var(--hoop-highlight)"/><stop offset=".25" stop-color="var(--hoop-light)"/><stop offset=".54" stop-color="var(--hoop-colour)"/><stop offset=".8" stop-color="var(--hoop-light)"/><stop offset="1" stop-color="var(--hoop-dark)"/></linearGradient></defs>' +
+        '<circle cx="90" cy="101" r="63" fill="none" stroke="var(--hoop-dark)" stroke-width="27"/>' +
+        '<circle cx="90" cy="97" r="63" fill="none" stroke="var(--hoop-mid)" stroke-width="26"/>' +
         '<circle cx="90" cy="85" r="63" fill="none" stroke="url(#hoopMetal)" stroke-width="26"/>' +
-        '<circle cx="90" cy="85" r="49" fill="none" stroke="#08778B" stroke-width="3"/>' +
-        '<path d="M29 74A63 63 0 0 1 112 26" fill="none" stroke="#EDFFFF" stroke-width="6" stroke-linecap="round"/>' +
-        '<path d="M139 123A63 63 0 0 1 85 148" fill="none" stroke="#ABFFFA" stroke-width="4" stroke-linecap="round"/></svg>';
+        '<circle cx="90" cy="85" r="49" fill="none" stroke="var(--hoop-dark)" stroke-width="3"/>' +
+        '<path d="M29 74A63 63 0 0 1 112 26" fill="none" stroke="var(--hoop-highlight)" stroke-width="6" stroke-linecap="round"/>' +
+        '<path d="M139 123A63 63 0 0 1 85 148" fill="none" stroke="var(--hoop-light)" stroke-width="4" stroke-linecap="round"/></svg>';
       JK.add(back, "i", "", hoopArt.replaceAll("hoopMetal", "hoopMetalBack")); JK.add(front, "i", "", hoopArt.replaceAll("hoopMetal", "hoopMetalFront"));
       const rings = [back, front];
+      const heldHoop = JK.add(actor, "span", "jl-sw-held-hoop", hoopArt.replaceAll("hoopMetal", "hoopMetalHeld"));
+      heldHoop.setAttribute("aria-hidden", "true");
       const shelf = JK.add(field, "div", "jl-prizes"); const slots = Q.map(()=> JK.add(shelf, "div", "jl-prize-slot"));
-      /* each question won puts a star in its place (SME 2026-11-09: a star instead of a jalebi; no three stars over the board) */
-      const STAR = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5.1 10.6 11.6 1.6-8.4 8.1 2 11.5L20 29.3 9.7 34.8l2-11.5-8.4-8.1 11.6-1.6z"/></svg>';
+      // One linked hoop per round; unearned hoops stay silver.
+      const levelColours = d.level_colors || ["#188FE5", "#F03E3E", "#31B85A", "#A455DA", "#007F91", "#E94E91"];
+      const PRIZE_RING = '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="prize-ring-rim" cx="32" cy="32" r="24" fill="none" stroke-width="10"/><circle class="prize-ring-colour" cx="32" cy="31" r="24" fill="none" stroke-width="6"/><path d="M12 28A21 21 0 0 1 34 10" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/></svg>';
+      shelf.setAttribute("role", "progressbar"); shelf.setAttribute("aria-label", "Completed levels");
+      shelf.setAttribute("aria-valuemin", "0"); shelf.setAttribute("aria-valuemax", String(Q.length)); shelf.setAttribute("aria-valuenow", "0");
+      const mixColour = (hex, target, amount)=> "#" + [1, 3, 5].map(n => Math.round(parseInt(hex.slice(n, n + 2), 16) * (1 - amount) + target * amount).toString(16).padStart(2, "0")).join("");
+      const setLevelColour = i =>{
+        const colour = levelColours[i % levelColours.length];
+        field.style.setProperty("--hoop-colour", colour);
+        field.style.setProperty("--hoop-mid", mixColour(colour, 0, .12));
+        field.style.setProperty("--hoop-dark", mixColour(colour, 0, .4));
+        field.style.setProperty("--hoop-light", mixColour(colour, 255, .42));
+        field.style.setProperty("--hoop-highlight", mixColour(colour, 255, .85));
+      };
+      setLevelColour(0);
+      slots.forEach((slot, i)=>{
+        slot.innerHTML = PRIZE_RING;
+        const colour = levelColours[i % levelColours.length];
+        slot.style.setProperty("--prize-colour", colour); slot.style.setProperty("--prize-rim", mixColour(colour, 0, .4));
+      });
       const kNow = ()=> parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
       const inField = el =>{ const f = field.getBoundingClientRect(), r = el.getBoundingClientRect(), k = kNow();
         return { x: (r.left - f.left) / k, y: (r.top - f.top) / k, w: r.width / k, h: r.height / k }; };
-      const REST = { x: 217, y: 543 }, RELEASE = { x: 255, y: 480 }; // centres of the held hoop and the released hoop
+      const REST = { x: 227, y: 573 }, RELEASE = { x: 265, y: 510 }; // centres of the held hoop and the released hoop
       const HAND_SCALE = .68;
+      field.style.setProperty("--held-ring-scale", String(HAND_SCALE));
       let throwEpoch = 0;
       const ringAt = (x, y)=> rings.forEach(r =>{ r.style.left = x + "px"; r.style.top = y + "px"; });
       const ringCls = (...c)=> rings.forEach(r => r.classList.add(...c));
@@ -1779,7 +1840,7 @@ const JalebiModules = {
         }
         res();
       });
-      /* a bottle: glossy glass in its own colour, a yellow cap, the neck the ring goes over; the word on a tag in front */
+      /* All three glossy bottles share the current level colour; words stay on the counter tags. */
       const BOTTLE = '<svg viewBox="0 0 96 200" aria-hidden="true"><rect class="jl-bottle-neck" x="34" y="16" width="28" height="44" rx="5"/>' +
         '<path class="jl-bottle-body" d="M34 54 C34 74 6 80 6 112 L6 182 Q6 198 22 198 L74 198 Q90 198 90 182 L90 112 C90 80 62 74 62 54 Z"/>' +
         '<path d="M80 112 L80 182" stroke="#000" stroke-width="9" stroke-linecap="round" opacity=".12"/>' +
@@ -1789,18 +1850,40 @@ const JalebiModules = {
         '<path d="M41 26 L41 50" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".55"/>' +
         '<rect x="29" y="2" width="38" height="20" rx="6" fill="#FFD43B" stroke="#E0A100" stroke-width="2.5"/>' +
         '<path d="M35 7 L50 7" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></svg>';
-      const render = (b, o, i)=>{ b.style.setProperty("--glass", (d.bottles[i] && d.bottles[i].color) || "#FF6B6B");
+      const breakOtherBottles = chosen =>{
+        const cuts = [
+          ["0 0,100% 0,65% 34%,0 42%", -26, 80, -25],
+          ["100% 0,100% 45%,65% 34%", 25, 77, 28],
+          ["0 42%,65% 34%,45% 70%,0 76%", -18, 46, -17],
+          ["65% 34%,100% 45%,100% 78%,45% 70%", 30, 44, 25],
+          ["0 76%,45% 70%,60% 100%,0 100%", -10, 22, -12],
+          ["45% 70%,100% 78%,100% 100%,60% 100%", 16, 22, 15]
+        ];
+        opts.querySelectorAll(".jl-bottle-opt").forEach(button =>{
+          if(button === chosen) return;
+          button.disabled = true; button.classList.add("shattered", "locked");
+          const bottle = button.querySelector(".jl-bottle"), shards = JK.add(bottle, "span", "jl-bottle-shards");
+          shards.setAttribute("aria-hidden", "true");
+          cuts.forEach(([polygon, x, y, rotation])=>{
+            const piece = JK.add(shards, "span", "jl-glass-shard", BOTTLE);
+            piece.style.clipPath = "polygon(" + polygon + ")";
+            piece.style.setProperty("--shard-x", x + "px"); piece.style.setProperty("--shard-y", y + "px"); piece.style.setProperty("--shard-rotation", rotation + "deg");
+          });
+        });
+        sfxGlassBreak();
+      };
+      const render = (b, o)=>{ b.style.setProperty("--glass", levelColours[cur % levelColours.length]);
         b.innerHTML = '<span class="jl-bottle">' + BOTTLE + '</span><span class="jl-opt-word">' + o.word + '</span>'; };
       let cur = 0;
       const header = t =>{ $("promptText").textContent = t; bubbleText.textContent = t; };
       const ask = async i =>{
         const q = Q[i], qs = { ...slide, id: slide.id + "_q" + (i + 1), audio: q.audio };
         const QC = { ...C, slide: qs, say: (role, cues)=> C.clip(audioFor(qs, role), cues, role) };
-        header(q.prompt_hi); tgt.innerHTML = ""; opts.innerHTML = "";
+        setLevelColour(i); header(q.prompt_hi); tgt.innerHTML = ""; opts.innerHTML = "";
         const card = jlQPic(tgt, q.target); JK.pop(card);
         card.onclick = ()=>{ if(!isPlaying && C.alive()){ PVSFX.tap(); C.sayId(q.target.audio).catch(()=>{}); } };
         state.replayAudio = ()=>{ if(!isPlaying && C.alive()) QC.say("prompt").catch(()=>{}); };
-        const wrong = await jlPick(QC, opts, { options: roundOptions[i], keep_order: true, key: qs.id, signal: "rhyme_ring_correct", optClass: "jl-bottle-opt", render, throwAt,
+        const wrong = await jlPick(QC, opts, { options: roundOptions[i], keep_order: true, key: qs.id, signal: "rhyme_ring_correct", optClass: "jl-bottle-opt", idlePulse: true, keepAlternatives: true, render, throwAt,
           ladder: async (n, M)=>{ if(n === 2){
               // The bottles are shuffled: replay each word in its displayed left-to-right order.
               for(const bottle of M.els){
@@ -1818,16 +1901,17 @@ const JalebiModules = {
             if(i === 0 && C.alive()) { const cue = M.right.querySelector(".jl-opt-word"); placeNudge(cue);
               C.wait(2800).then(()=> { if(C.alive() && $("nudgeHand").classList.contains("show") && !M.right.classList.contains("hint-on")) stopNudge(); }).catch(()=>{}); }
           }).catch(()=>{}); },
-          onRight: async ()=>{
-            /* the prize: a star flies from the picture to its place on the board */
-            const from = inField(card), to = inField(slots[i]);
-            const prize = JK.add(field, "div", "jl-prize-fly", STAR); prize.style.left = (from.x + from.w / 2 - 34) + "px"; prize.style.top = (from.y + 30) + "px";
+          onRight: async chosen=>{
+            breakOtherBottles(chosen);
+            /* The earned level-coloured hoop flies from the bottle into the chain. */
+            const from = inField(opts.querySelector(".jl-bottle-opt.won .jl-bottle")), to = inField(slots[i]);
+            const prize = JK.add(field, "div", "jl-prize-fly", PRIZE_RING); prize.style.left = (from.x + from.w / 2 - 34) + "px"; prize.style.top = (from.y + 30) + "px";
             const an = prize.animate([{ left: prize.style.left, top: prize.style.top, scale: 1.3 },
                                       { left: (to.x + to.w / 2 - 34 + (from.x - to.x) * .2) + "px", top: (Math.min(from.y, to.y) - 60) + "px", scale: 1.1 },
                                       { left: (to.x + to.w / 2 - 34) + "px", top: (to.y + to.h / 2 - 34) + "px", scale: .9 }],
                                      { duration: JK.reduce() ? 1 : 900, easing: "ease-in-out" });
             await new Promise(r => an.onfinish = r); prize.remove();
-            slots[i].classList.add("won"); slots[i].innerHTML = STAR; JK.pop(slots[i]); playSfxFile("sfx_star_pop_new", 0.7, ()=> PVSFX.appear());
+            slots[i].classList.add("won"); shelf.setAttribute("aria-valuenow", String(i + 1)); JK.pop(slots[i]); playSfxFile("sfx_star_pop_new", 0.7, ()=> PVSFX.appear());
           } });
         stopNudge(); recordResult(qs, wrong === 0);
       };
